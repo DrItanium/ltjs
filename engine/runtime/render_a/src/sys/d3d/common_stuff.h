@@ -33,7 +33,12 @@ void	dfree(void *ptr);
 void	AddDebugMessage(uint32 debugLevel, const char *pMsg, ...);
 void	d3d_CreateConsoleVariables();
 void	d3d_ReadConsoleVariables();
- 
+
+// BBi {
+extern char* g_vid_renderer;
+// BBi }
+
+
 #endif  // __COMMON_STUFF_H__
 
 

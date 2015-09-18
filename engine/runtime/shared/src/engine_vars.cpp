@@ -203,6 +203,10 @@ int32 g_CV_NewPlayerPhysics = 1;	// Use the new player physics
 int32 g_CV_UDPSimulatePacketLoss = 0;
 int32 g_CV_UDPSimulateCorruption = 0;
 
+// BBi {
+char* g_vid_renderer = nullptr;
+// BBi }
+
 //------------------------------------------------------------------
 //------------------------------------------------------------------
 // The main table of command variables
@@ -346,6 +350,10 @@ static LTEngineVar g_LTEngineVars[] =
 	EV_LONG("UDPSimulateCorruption", &g_CV_UDPSimulateCorruption),
 
 	EV_LONG("ModelOnlyUpdateDirtyTrackers", &g_CV_ModelOnlyUpdateDirtyTrackers),
+
+    // BBi {
+    EV_STRING("vid_renderer", &::g_vid_renderer),
+    // BBi }
 };
 
 
