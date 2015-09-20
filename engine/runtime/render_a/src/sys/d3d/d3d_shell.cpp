@@ -3,12 +3,12 @@
 // There's only one of these in the renderer. 
 
 #include "precompile.h"
-
 #include "d3d_shell.h"
+#include <algorithm>
 #include "common_stuff.h"
 #include "renderstruct.h"
 #include "rendererconsolevars.h"
-#include <algorithm>
+#include "ltjs_d3d9_wrapper.h"
 
 CD3D_Shell g_D3DShell;						// The global D3D Shell...
 
@@ -28,6 +28,56 @@ D3DFORMAT gKnownFormats[] = {
 bool CD3D_Shell::Create()
 {
 	FreeAll();								// Make sure everything is all clean before we start...
+
+    // BBi { Initialize wrapper
+
+    // Select renderer
+    //
+
+    std::string renderer_name;
+    auto renderer_mode = ltjs::d3d9::Wrapper::Mode::none;
+
+    if (::g_vid_renderer) {
+        renderer_name = ::g_vid_renderer;
+    }
+
+    if (renderer_name == "d3d9") {
+        renderer_mode = ltjs::d3d9::Wrapper::Mode::d3d9;
+    } else if (renderer_name == "ogl") {
+        renderer_mode = ltjs::d3d9::Wrapper::Mode::ogl;
+    } else {
+        // FIXME Log warning
+    }
+
+    if (renderer_mode == ltjs::d3d9::Wrapper::Mode::none) {
+#ifdef _WIN32
+        renderer_mode = ltjs::d3d9::Wrapper::Mode::d3d9;
+#else
+        renderer_mode = ltjs::d3d9::Wrapper::Mode::ogl;
+#endif
+    }
+
+    if (renderer_mode != ltjs::d3d9::Wrapper::Mode::ogl) {
+        // On non-Windows platform always select OpenGL
+#ifndef _WIN32
+        renderer_mode = ltjs::d3d9::Wrapper::Mode::ogl;
+#endif
+    }
+
+    // Initialize wrapper
+    //
+
+    auto& wrapper = ltjs::d3d9::Wrapper::get_singleton();
+
+    auto wrapper_result = wrapper.initialize(
+        renderer_mode);
+
+    if (!wrapper_result) {
+        // FIXME Log error
+        return false;
+    }
+
+    // BBi }
 
 	// Create the D3D Object (it lets us Query/Create devices)...
 	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
@@ -54,6 +104,12 @@ void CD3D_Shell::FreeAll()
 {
 	if (m_pD3D) {
 		uint32 iRefCnt = m_pD3D->Release(); } // assert(iRefCnt==0);
+
+    // BBi {
+    auto& wrapper = ltjs::d3d9::Wrapper::get_singleton();
+
+    wrapper.uninitialize();
+    // BBi }
 
 	Reset();
 }
