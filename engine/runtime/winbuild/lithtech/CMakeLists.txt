@@ -11,7 +11,6 @@ add_definitions(-DDIRECTENGINE_COMPILE)
 add_definitions(-D__D3D)
 add_definitions(-D__D3DREND)
 add_definitions(-DMODEL_SUPPORT_ABC)
-add_compile_options($<$<CONFIG:DEBUG>:-DD3D_DEBUG_INFO>)
 
 include_directories(
     ../../../../directx/include
@@ -575,6 +574,7 @@ if (MSVC)
         ${PATH_TO_DX_LIBS}/dxguid.lib
         ${PATH_TO_DX_LIBS}/dinput8.lib
         ${PATH_TO_DX_LIBS}/dplayx.lib
+        opengl32
         winmm
     )
 endif ()
@@ -582,11 +582,12 @@ endif ()
 if (MINGW)
     set(
         LIBS
-        d3d9
+#        d3d9
         d3dx9
         dbghelp
         dxguid
         dinput8
+        opengl32
         winmm
         ws2_32
     )

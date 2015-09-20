@@ -7,7 +7,6 @@ ltjs_add_default_options(precompile.h)
 add_definitions(-D__D3DREND)
 add_definitions(-D__D3D)
 add_definitions(-DMODEL_SUPPORT_ABC)
-add_compile_options($<$<CONFIG:DEBUG>:-DD3D_DEBUG_INFO>)
 
 include_directories(
     ../../../../../../directx/include
@@ -182,6 +181,17 @@ set(
     vertexbuffercontroller.h
     ../../../../world/src/world_tree.h
     ../../../../world/src/worldtreehelper.h
+    ltjs_d3d9_device9_impl.h
+    ltjs_d3d9_exception.h
+    ltjs_d3d9_id3d9_impl.h
+    ltjs_d3d9_index_buffer9_impl.h
+    ltjs_d3d9_surface9_impl.h
+    ltjs_d3d9_texture9_impl.h
+    ltjs_d3d9_unknown_impl.h
+    ltjs_d3d9_vertex_buffer9_impl.h
+    ltjs_d3d9_vertex_declaration9_impl.h
+    ltjs_d3d9_wrapper.h
+    GL/glcorearb.h
 )
 
 set(
@@ -262,6 +272,18 @@ set(
     texturescriptinterpreter.cpp
     texturescriptmgr.cpp
     texturescriptvarmgr.cpp
+    ltjs_d3d9_device9_impl.cpp
+    ltjs_d3d9_dsurface9_impl.cpp
+    ltjs_d3d9_exception.cpp
+    ltjs_d3d9_id3d9_impl.cpp
+    ltjs_d3d9_index_buffer9_impl.cpp
+    ltjs_d3d9_texture9_impl.cpp
+    ltjs_d3d9_unknown_impl.cpp
+    ltjs_d3d9_vertex_buffer9_impl.cpp
+    ltjs_d3d9_vertex_declaration9_impl.cpp
+    ltjs_d3d9_wrapper.cpp
+    ltjs_d3d9_wrapper_d3d9.cpp
+    ltjs_d3d9_wrapper_ogl.cpp
 )
 
 if (MSVC)
