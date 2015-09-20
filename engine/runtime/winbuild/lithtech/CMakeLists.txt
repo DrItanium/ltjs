@@ -582,7 +582,6 @@ endif ()
 if (MINGW)
     set(
         LIBS
-#        d3d9
         d3dx9
         dbghelp
         dxguid
