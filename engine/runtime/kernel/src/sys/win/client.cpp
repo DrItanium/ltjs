@@ -560,7 +560,8 @@ int RunClientApp(HINSTANCE hInstance) {
 
 
     // Create the main window.
-    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    // BBi {} Added CS_OWNDC
+    wndclass.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_OWNDC;
     wndclass.lpfnWndProc   = MainWndProc;
     wndclass.cbClsExtra    = 0;
     wndclass.cbWndExtra    = 0;
