@@ -539,7 +539,7 @@ bool Wrapper::preinitialize_ogl_context(
 bool Wrapper::initialize_ogl_context(
     HWND device_window)
 {
-    uninitialize_ogl();
+    uninitialize_ogl_context();
 
     if (!preinitialize_ogl_context(
         device_window))
@@ -738,16 +738,8 @@ bool Wrapper::initialize_ogl_context(
         }
     }
 
-    if (ogl_context)
-    {
-        static_cast<void>(::wglMakeCurrent(
-            device_context,
-            ogl_context));
-
-        static_cast<void>(::wglDeleteContext(
-            ogl_context));
-
-        uninitialize_ogl();
+    if (!is_succeed) {
+        uninitialize_ogl_context();
     }
 
     return is_succeed;
@@ -800,7 +792,7 @@ void Wrapper::uninitialize_ogl_context()
 
     static_cast<void>(::wglMakeCurrent(
         device_context,
-        ogl_context));
+        nullptr));
 
     static_cast<void>(::wglDeleteContext(
         ogl_context));

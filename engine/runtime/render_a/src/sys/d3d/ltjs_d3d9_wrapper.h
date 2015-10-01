@@ -49,6 +49,8 @@ public:
 
     void uninitialize();
 
+    void uninitialize_ogl_context();
+
     const std::string get_error_message();
 
     IDirect3D9* d3d_create9(
@@ -72,8 +74,6 @@ private:
     void uninitialize_d3d9();
 
     void uninitialize_ogl();
-
-    void uninitialize_ogl_context();
 
 
     Mode mode_;
