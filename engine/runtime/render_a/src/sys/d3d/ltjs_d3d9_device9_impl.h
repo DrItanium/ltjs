@@ -564,6 +564,13 @@ public:
 
     virtual ~Device9Impl();
 
+
+    HRESULT initialize(
+        DWORD behavior_flags,
+        const D3DPRESENT_PARAMETERS& presentation_parameters);
+
+    void uninitialize();
+
     // Internals
     // =========
 }; // Device9Impl

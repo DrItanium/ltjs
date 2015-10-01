@@ -912,6 +912,17 @@ Device9Impl::~Device9Impl()
 {
 }
 
+HRESULT Device9Impl::initialize(
+    DWORD behavior_flags,
+    const D3DPRESENT_PARAMETERS& presentation_parameters)
+{
+    return D3DERR_NOTAVAILABLE;
+}
+
+void Device9Impl::uninitialize()
+{
+}
+
 // Internals
 // =========
 

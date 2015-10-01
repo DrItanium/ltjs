@@ -1,5 +1,7 @@
 #include "precompile.h"
 
+#include <new>
+
 #define GL_GLEXT_PROTOTYPES
 
 #ifdef _WIN32
@@ -8,6 +10,7 @@
 
 #include "GL/glcorearb.h"
 #include "ltjs_d3d9_id3d9_impl.h"
+#include "ltjs_d3d9_device9_impl.h"
 #include "ltjs_d3d9_exception.h"
 #include "ltjs_d3d9_wrapper.h"
 
@@ -329,7 +332,41 @@ IFACEMETHODIMP ID3d9Impl::CreateDevice(
     D3DPRESENT_PARAMETERS* pPresentationParameters,
     IDirect3DDevice9** ppReturnedDeviceInterface)
 {
-    throw Exception("Not implemented.");
+    if (Adapter != D3DADAPTER_DEFAULT) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (DeviceType != D3DDEVTYPE_HAL) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!pPresentationParameters) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!ppReturnedDeviceInterface) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    auto device =
+        new (std::nothrow) Device9Impl();
+
+    if (!device) {
+        return D3DERR_OUTOFVIDEOMEMORY;
+    }
+
+    auto initialize_result = device->initialize(
+        BehaviorFlags,
+        *pPresentationParameters);
+
+    if (initialize_result == D3D_OK) {
+        *ppReturnedDeviceInterface =
+            static_cast<IDirect3DDevice9*>(device);
+    } else {
+        static_cast<void>(device->Release());
+    }
+
+    return initialize_result;
 }
 
 // IDirect3D9
