@@ -571,6 +571,12 @@ public:
 
     void uninitialize();
 
+    static bool validate_behavior_flags(
+        DWORD flags);
+
+    static bool validate_presentation_parameters(
+        const D3DPRESENT_PARAMETERS& presentation_parameters);
+
     // Internals
     // =========
 }; // Device9Impl

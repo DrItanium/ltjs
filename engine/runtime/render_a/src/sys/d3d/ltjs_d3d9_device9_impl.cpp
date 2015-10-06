@@ -1,6 +1,7 @@
 #include "precompile.h"
 #include "ltjs_d3d9_device9_impl.h"
 #include "ltjs_d3d9_exception.h"
+#include "ltjs_d3d9_wrapper.h"
 
 
 namespace ltjs {
@@ -910,17 +911,104 @@ Device9Impl::Device9Impl()
 
 Device9Impl::~Device9Impl()
 {
+    uninitialize();
 }
 
 HRESULT Device9Impl::initialize(
     DWORD behavior_flags,
     const D3DPRESENT_PARAMETERS& presentation_parameters)
 {
-    return D3DERR_NOTAVAILABLE;
+    if (!validate_behavior_flags(
+        behavior_flags))
+    {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!validate_presentation_parameters(
+        presentation_parameters))
+    {
+        return D3DERR_INVALIDCALL;
+    }
+
+    auto& wrapper = Wrapper::get_singleton();
+
+    if (!wrapper.initialize_ogl_context(
+        presentation_parameters.hDeviceWindow))
+    {
+        return D3DERR_NOTAVAILABLE;
+    }
+
+    return D3D_OK;
 }
 
 void Device9Impl::uninitialize()
 {
+    auto& wrapper = Wrapper::get_singleton();
+
+    wrapper.uninitialize_ogl_context();
+}
+
+bool Device9Impl::validate_behavior_flags(
+    DWORD flags)
+{
+    const DWORD all_vertex_flags =
+        D3DCREATE_HARDWARE_VERTEXPROCESSING |
+        D3DCREATE_MIXED_VERTEXPROCESSING |
+        D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+
+    auto vertex_mask = flags & all_vertex_flags;
+
+    if (vertex_mask == 0) {
+        return false;
+    }
+
+    switch (vertex_mask) {
+    case D3DCREATE_HARDWARE_VERTEXPROCESSING:
+    case D3DCREATE_MIXED_VERTEXPROCESSING:
+    case D3DCREATE_SOFTWARE_VERTEXPROCESSING:
+        break;
+
+    default:
+        return false;
+    }
+
+    if ((flags & D3DCREATE_PUREDEVICE) != 0) {
+        return false;
+    }
+
+    return true;
+}
+
+bool Device9Impl::validate_presentation_parameters(
+    const D3DPRESENT_PARAMETERS& presentation_parameters)
+{
+    auto& pp = presentation_parameters;
+
+    if (pp.MultiSampleType != D3DMULTISAMPLE_NONE &&
+        pp.SwapEffect != D3DSWAPEFFECT_DISCARD)
+    {
+        return false;
+    }
+
+    if (pp.SwapEffect == D3DSWAPEFFECT_COPY &&
+        pp.BackBufferCount != 1)
+    {
+        return false;
+    }
+
+    if (::IsWindow(pp.hDeviceWindow) == FALSE) {
+        return false;
+    }
+
+    if (pp.EnableAutoDepthStencil == FALSE) {
+        return false;
+    }
+
+    if (pp.AutoDepthStencilFormat != D3DFMT_D24S8) {
+        return false;
+    }
+
+    return true;
 }
 
 // Internals

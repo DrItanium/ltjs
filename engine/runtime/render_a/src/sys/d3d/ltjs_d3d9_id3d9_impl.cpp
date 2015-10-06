@@ -190,11 +190,6 @@ IFACEMETHODIMP ID3d9Impl::CheckDeviceType(
 
     switch (AdapterFormat) {
     case D3DFMT_A8R8G8B8:
-        if (bWindowed == FALSE) {
-            return D3DERR_NOTAVAILABLE;
-        }
-        break;
-
     case D3DFMT_X8R8G8B8:
         break;
 
@@ -345,6 +340,17 @@ IFACEMETHODIMP ID3d9Impl::CreateDevice(
     }
 
     if (!ppReturnedDeviceInterface) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    auto check_device_type_result = CheckDeviceType(
+        Adapter,
+        DeviceType,
+        D3DFMT_A8R8G8B8,
+        pPresentationParameters->BackBufferFormat,
+        pPresentationParameters->Windowed);
+
+    if (check_device_type_result != D3D_OK) {
         return D3DERR_INVALIDCALL;
     }
 
