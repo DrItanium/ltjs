@@ -7,6 +7,8 @@
 #define LTJS_D3D9_DEVICE9_IMPL_INCLUDED
 
 
+#include <array>
+#include <bitset>
 #include <d3d9.h>
 #include "ltjs_d3d9_unknown_impl.h"
 
@@ -571,11 +573,30 @@ public:
 
     void uninitialize();
 
+    void set_default_render_state();
+
     static bool validate_behavior_flags(
         DWORD flags);
 
     static bool validate_presentation_parameters(
         const D3DPRESENT_PARAMETERS& presentation_parameters);
+
+    static DWORD float_to_dword(
+        const float value);
+
+    static float dword_to_float(
+        const DWORD value);
+
+
+    //
+    static const int max_render_state = 256;
+
+    using RenderState = std::array<DWORD,max_render_state>;
+    using RenderStateChanges = std::bitset<max_render_state>;
+
+
+    RenderState render_state;
+    RenderStateChanges render_state_changes;
 
     // Internals
     // =========

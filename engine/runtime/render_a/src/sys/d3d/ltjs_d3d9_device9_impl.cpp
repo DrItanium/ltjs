@@ -948,6 +948,46 @@ void Device9Impl::uninitialize()
     wrapper.uninitialize_ogl_context();
 }
 
+void Device9Impl::set_default_render_state()
+{
+    render_state[D3DRS_ZENABLE] = TRUE;
+    render_state[D3DRS_FILLMODE] = D3DFILL_SOLID;
+    render_state[D3DRS_SHADEMODE] = D3DSHADE_GOURAUD;
+    render_state[D3DRS_ZWRITEENABLE] = TRUE;
+    render_state[D3DRS_ALPHATESTENABLE] = FALSE;
+    render_state[D3DRS_SRCBLEND] = D3DBLEND_ONE;
+    render_state[D3DRS_DESTBLEND] = D3DBLEND_ZERO;
+    render_state[D3DRS_CULLMODE] = D3DCULL_CCW;
+    render_state[D3DRS_ZFUNC] = TRUE;
+    render_state[D3DRS_ALPHAREF] = 0;
+    render_state[D3DRS_ALPHAFUNC] = D3DCMP_ALWAYS;
+    render_state[D3DRS_DITHERENABLE] = FALSE;
+    render_state[D3DRS_ALPHABLENDENABLE] = FALSE;
+    render_state[D3DRS_FOGENABLE] = FALSE;
+    render_state[D3DRS_SPECULARENABLE] = FALSE;
+    render_state[D3DRS_FOGCOLOR] = 0;
+    render_state[D3DRS_FOGTABLEMODE] = D3DFOG_NONE;
+    render_state[D3DRS_FOGSTART] = float_to_dword(0.0F);
+    render_state[D3DRS_FOGEND] = float_to_dword(1.0F);
+    render_state[D3DRS_TEXTUREFACTOR] = 0xFFFFFFFF;
+    render_state[D3DRS_CLIPPING] = TRUE;
+    render_state[D3DRS_LIGHTING] = TRUE;
+    render_state[D3DRS_AMBIENT] = 0;
+    render_state[D3DRS_FOGVERTEXMODE] = D3DFOG_NONE;
+    render_state[D3DRS_COLORVERTEX] = TRUE;
+    render_state[D3DRS_NORMALIZENORMALS] = FALSE;
+    render_state[D3DRS_DIFFUSEMATERIALSOURCE] = D3DMCS_COLOR1;
+    render_state[D3DRS_SPECULARMATERIALSOURCE] = D3DMCS_COLOR2;
+    render_state[D3DRS_AMBIENTMATERIALSOURCE] = D3DMCS_MATERIAL;
+    render_state[D3DRS_EMISSIVEMATERIALSOURCE] = D3DMCS_MATERIAL;
+    render_state[D3DRS_VERTEXBLEND] = D3DVBF_DISABLE;
+    render_state[D3DRS_INDEXEDVERTEXBLENDENABLE] = FALSE;
+    render_state[D3DRS_SLOPESCALEDEPTHBIAS] = 0;
+    render_state[D3DRS_DEPTHBIAS] = 0;
+
+    render_state_changes.set();
+}
+
 bool Device9Impl::validate_behavior_flags(
     DWORD flags)
 {
@@ -1009,6 +1049,18 @@ bool Device9Impl::validate_presentation_parameters(
     }
 
     return true;
+}
+
+DWORD Device9Impl::float_to_dword(
+    const float value)
+{
+    return *reinterpret_cast<const DWORD*>(&value);
+}
+
+float Device9Impl::dword_to_float(
+    const DWORD value)
+{
+    return *reinterpret_cast<const float*>(&value);
 }
 
 // Internals
