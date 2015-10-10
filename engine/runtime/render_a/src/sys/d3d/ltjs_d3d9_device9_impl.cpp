@@ -8,6 +8,34 @@ namespace ltjs {
 namespace d3d9 {
 
 
+const GLchar* const Device9Impl::ogl_vertex_shader_source =
+R"LTJS_RAW_STRING(
+
+#version 330 core
+
+void main()
+{
+    gl_Position = vec4(0.0);
+}
+
+)LTJS_RAW_STRING";
+
+
+const GLchar* const Device9Impl::ogl_fragment_shader_source =
+R"LTJS_RAW_STRING(
+
+#version 330 core
+
+out vec4 result;
+
+void main()
+{
+    result = vec4(0.0);
+}
+
+)LTJS_RAW_STRING";
+
+
 // ========
 // IUnknown
 
@@ -905,7 +933,16 @@ IFACEMETHODIMP Device9Impl::CreateQuery(
 // =========
 // Internals
 
-Device9Impl::Device9Impl()
+Device9Impl::Device9Impl() :
+    render_state(),
+    render_state_changes(),
+    ogl_error_message(),
+    ogl_vertex_shader_object(),
+    ogl_vertex_shader_warning_message(),
+    ogl_fragment_shader_object(),
+    ogl_fragment_shader_warning_message(),
+    ogl_program_object(),
+    ogl_program_warning_message()
 {
 }
 
@@ -930,19 +967,33 @@ HRESULT Device9Impl::initialize(
         return D3DERR_INVALIDCALL;
     }
 
+    auto is_succeed = true;
+
     auto& wrapper = Wrapper::get_singleton();
 
-    if (!wrapper.initialize_ogl_context(
-        presentation_parameters.hDeviceWindow))
-    {
-        return D3DERR_NOTAVAILABLE;
+    if (is_succeed) {
+        is_succeed = wrapper.initialize_ogl_context(
+            presentation_parameters.hDeviceWindow);
     }
 
-    return D3D_OK;
+    if (is_succeed) {
+        is_succeed = ogl_initialize_program();
+    }
+
+    if (is_succeed) {
+        return D3D_OK;
+    } else {
+        uninitialize();
+        return D3DERR_INVALIDCALL;
+    }
 }
 
 void Device9Impl::uninitialize()
 {
+    ogl_uninitialize_program();
+    ogl_uninitialize_shaders();
+
+
     auto& wrapper = Wrapper::get_singleton();
 
     wrapper.uninitialize_ogl_context();
@@ -1061,6 +1112,263 @@ float Device9Impl::dword_to_float(
     const DWORD value)
 {
     return *reinterpret_cast<const float*>(&value);
+}
+
+std::string Device9Impl::ogl_get_info_log(
+    GLuint object)
+{
+    if (object == GL_NONE) {
+        return std::string();
+    }
+
+    auto is_shader = false;
+    GLint info_log_size = 0; // with a null terminator
+
+    if (::glIsShader(object)) {
+        is_shader = true;
+
+        ::glGetShaderiv(
+            object,
+            GL_INFO_LOG_LENGTH,
+            &info_log_size);
+    } else if (::glIsProgram(object)) {
+        is_shader = false;
+
+        ::glGetProgramiv(
+            object,
+            GL_INFO_LOG_LENGTH,
+            &info_log_size);
+    }
+
+    if (info_log_size <= 1) {
+        return std::string();
+    }
+
+    GLsizei info_log_length; // without a null terminator
+
+    std::vector<GLchar> info_log(
+        info_log_size,
+        '\0');
+
+    if (is_shader) {
+        ::glGetShaderInfoLog(
+            object,
+            info_log_size,
+            &info_log_length,
+            info_log.data());
+    } else {
+        ::glGetProgramInfoLog(
+            object,
+            info_log_size,
+            &info_log_length,
+            info_log.data());
+    }
+
+    if (info_log_length > 0) {
+        return std::string(
+            info_log.data(),
+            info_log.size());
+    }
+
+    return std::string();
+}
+
+bool Device9Impl::ogl_create_shader(
+    GLenum shader_type,
+    const GLchar* const shader_text,
+    GLuint& shader_object)
+{
+    auto& warning_message = ogl_get_shader_warning_message_ref(
+        shader_type);
+
+    const auto shader_type_name = ogl_get_shader_type_name(
+        shader_type);
+
+    shader_object = ::glCreateShader(
+        shader_type);
+
+    if (shader_object == GL_NONE) {
+        ogl_error_message =
+            "Failed to create a " + shader_type_name + " shader object.";
+
+        return false;
+    }
+
+    GLint compile_status = GL_FALSE;
+
+    const GLchar* const lines[1] = {
+        shader_text,
+    };
+
+    const GLint lengths[1] = {
+        static_cast<GLint>(
+        std::string::traits_type::length(
+            shader_text)),
+    };
+
+    ::glShaderSource(
+        shader_object,
+        1,
+        lines,
+        lengths);
+
+    ::glCompileShader(
+        shader_object);
+
+    ::glGetShaderiv(
+        shader_object,
+        GL_COMPILE_STATUS,
+        &compile_status);
+
+    const auto shader_log = ogl_get_info_log(
+        shader_object);
+
+    if (compile_status != GL_FALSE) {
+        if (!shader_log.empty()) {
+            warning_message = shader_type_name + " shader:\n" + shader_log;
+        }
+
+        return true;
+    }
+
+    if (shader_log.empty()) {
+        ogl_error_message = "Generic shader compiler error.";
+    }
+
+    ogl_error_message = shader_log;
+
+    return false;
+}
+
+bool Device9Impl::ogl_initialize_program()
+{
+    ogl_error_message.clear();
+    ogl_vertex_shader_warning_message.clear();
+    ogl_fragment_shader_warning_message.clear();
+    ogl_program_warning_message.clear();
+
+    auto is_succeed = true;
+
+    if (is_succeed) {
+        is_succeed = ogl_create_shader(
+            GL_VERTEX_SHADER,
+            ogl_vertex_shader_source,
+            ogl_vertex_shader_object);
+    }
+
+    if (is_succeed) {
+        is_succeed = ogl_create_shader(
+            GL_FRAGMENT_SHADER,
+            ogl_fragment_shader_source,
+            ogl_fragment_shader_object);
+    }
+
+    if (is_succeed) {
+        ogl_program_object = ::glCreateProgram();
+
+        if (ogl_program_object == GL_NONE) {
+            is_succeed = false;
+            ogl_error_message = "Failed to create a program object.";
+        }
+    }
+
+    if (is_succeed) {
+        GLint link_status = GL_FALSE;
+
+        ::glAttachShader(
+            ogl_program_object,
+            ogl_vertex_shader_object);
+
+        ::glAttachShader(
+            ogl_program_object,
+            ogl_fragment_shader_object);
+
+        ::glLinkProgram(
+            ogl_program_object);
+
+        ::glGetProgramiv(
+            ogl_program_object,
+            GL_LINK_STATUS,
+            &link_status);
+
+        auto program_log = ogl_get_info_log(
+            ogl_program_object);
+
+        if (link_status != GL_FALSE) {
+            if (!program_log.empty()) {
+                ogl_program_warning_message = program_log;
+            }
+        } else {
+            is_succeed = false;
+
+            if (program_log.empty()) {
+                program_log = "Generic program linker error.";
+            }
+
+            ogl_error_message = program_log;
+        }
+
+        is_succeed = (link_status != GL_FALSE);
+    }
+
+    return is_succeed;
+}
+
+void Device9Impl::ogl_uninitialize_program()
+{
+    if (ogl_program_object != GL_NONE) {
+        ::glDeleteProgram(
+            ogl_program_object);
+
+        ogl_program_object = GL_NONE;
+    }
+}
+
+void Device9Impl::ogl_uninitialize_shaders()
+{
+    if (ogl_vertex_shader_object != GL_NONE) {
+        ::glDeleteShader(
+            ogl_vertex_shader_object);
+
+        ogl_vertex_shader_object = GL_NONE;
+    }
+
+    if (ogl_fragment_shader_object != GL_NONE) {
+        ::glDeleteShader(
+            ogl_fragment_shader_object);
+
+        ogl_fragment_shader_object = GL_NONE;
+    }
+}
+
+std::string Device9Impl::ogl_get_shader_type_name(
+    GLenum shader_type)
+{
+    switch (shader_type) {
+    case GL_VERTEX_SHADER:
+        return "vertex";
+
+    case GL_FRAGMENT_SHADER:
+        return "fragment";
+
+    default:
+        throw Exception("Unsupported shader type.");
+    }
+}
+
+std::string& Device9Impl::ogl_get_shader_warning_message_ref(
+    GLenum shader_type)
+{
+    switch (shader_type) {
+    case GL_VERTEX_SHADER:
+        return ogl_vertex_shader_warning_message;
+
+    case GL_FRAGMENT_SHADER:
+        return ogl_fragment_shader_warning_message;
+
+    default:
+        throw Exception("Unsupported shader type.");
+    }
 }
 
 // Internals

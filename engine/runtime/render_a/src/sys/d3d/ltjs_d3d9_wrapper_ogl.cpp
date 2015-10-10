@@ -263,7 +263,7 @@ GLAPI void APIENTRY glLinkProgram(
 GLAPI void APIENTRY glShaderSource(
     GLuint shader,
     GLsizei count,
-    const GLchar** string,
+    const GLchar* const* string,
     const GLint* length)
 {
     glShaderSource_(

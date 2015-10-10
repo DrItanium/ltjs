@@ -1,13 +1,10 @@
 #include "precompile.h"
 
-#include <new>
 
 #define GL_GLEXT_PROTOTYPES
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
+#include <new>
 #include "GL/glcorearb.h"
 #include "ltjs_d3d9_id3d9_impl.h"
 #include "ltjs_d3d9_device9_impl.h"

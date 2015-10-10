@@ -7,9 +7,14 @@
 #define LTJS_D3D9_DEVICE9_IMPL_INCLUDED
 
 
+#define GL_GLEXT_PROTOTYPES
+
+
 #include <array>
 #include <bitset>
+#include <string>
 #include <d3d9.h>
+#include "GL/glcorearb.h"
 #include "ltjs_d3d9_unknown_impl.h"
 
 
@@ -575,6 +580,22 @@ public:
 
     void set_default_render_state();
 
+
+    bool ogl_create_shader(
+        GLenum shader_type,
+        const GLchar* const shader_text,
+        GLuint& shader_object);
+
+    bool ogl_initialize_program();
+
+    void ogl_uninitialize_program();
+
+    void ogl_uninitialize_shaders();
+
+    std::string& ogl_get_shader_warning_message_ref(
+        GLenum shader_type);
+
+
     static bool validate_behavior_flags(
         DWORD flags);
 
@@ -587,9 +608,18 @@ public:
     static float dword_to_float(
         const DWORD value);
 
+    static std::string ogl_get_info_log(
+        GLuint object);
+
+    static std::string ogl_get_shader_type_name(
+        GLenum shader_type);
+
 
     //
     static const int max_render_state = 256;
+
+    static const GLchar* const ogl_vertex_shader_source;
+    static const GLchar* const ogl_fragment_shader_source;
 
     using RenderState = std::array<DWORD,max_render_state>;
     using RenderStateChanges = std::bitset<max_render_state>;
@@ -597,6 +627,17 @@ public:
 
     RenderState render_state;
     RenderStateChanges render_state_changes;
+
+    std::string ogl_error_message;
+
+    GLuint ogl_vertex_shader_object;
+    std::string ogl_vertex_shader_warning_message;
+
+    GLuint ogl_fragment_shader_object;
+    std::string ogl_fragment_shader_warning_message;
+
+    GLuint ogl_program_object;
+    std::string ogl_program_warning_message;
 
     // Internals
     // =========
