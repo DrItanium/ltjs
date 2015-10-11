@@ -425,14 +425,14 @@ bool Wrapper::preinitialize_ogl_context(
         PFD_SUPPORT_OPENGL |
         PFD_DOUBLEBUFFER;
 
-    PIXELFORMATDESCRIPTOR pfd_request{};
-    pfd_request.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    PIXELFORMATDESCRIPTOR pfd_request;
+    ZeroMemory(&pfd_request, sizeof(pfd_request));
+    pfd_request.nSize = sizeof(pfd_request);
     pfd_request.nVersion = 1;
     pfd_request.dwFlags = flags;
     pfd_request.iPixelType = PFD_TYPE_RGBA;
     pfd_request.cColorBits = 32;
     pfd_request.cDepthBits = 24;
-    pfd_request.cStencilBits = 8;
     pfd_request.iLayerType = PFD_MAIN_PLANE;
 
     auto pixelFormatIndex = ::ChoosePixelFormat(
@@ -448,7 +448,8 @@ bool Wrapper::preinitialize_ogl_context(
     // Get choosen format
     //
 
-    PIXELFORMATDESCRIPTOR pfd_response{};
+    PIXELFORMATDESCRIPTOR pfd_response;
+    ZeroMemory(&pfd_response, sizeof(pfd_response));
 
     auto describeResult = ::DescribePixelFormat(
         device_context,

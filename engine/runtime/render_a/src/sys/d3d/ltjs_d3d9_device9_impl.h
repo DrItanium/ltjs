@@ -22,6 +22,9 @@ namespace ltjs {
 namespace d3d9 {
 
 
+class ID3d9Impl;
+
+
 class Device9Impl :
     public IDirect3DDevice9,
     public UnknownImpl
@@ -561,7 +564,8 @@ public:
     // =========
     // Internals
 
-    Device9Impl();
+    Device9Impl(
+        ID3d9Impl* id3d9_impl);
 
     Device9Impl(
         const Device9Impl& that) = delete;
@@ -570,6 +574,39 @@ public:
         const Device9Impl& that) = delete;
 
     virtual ~Device9Impl();
+
+
+    static HRESULT d3d9_get_adapter_identifier(
+        DWORD flags,
+        D3DADAPTER_IDENTIFIER9 *id_ptr);
+
+    static HRESULT d3d9_get_adapter_display_mode(
+        D3DDISPLAYMODE *mode_ptr);
+
+    static UINT d3d9_get_adapter_mode_count(
+        D3DFORMAT format);
+
+    static HRESULT d3d9_enum_adapter_modes(
+        D3DFORMAT format,
+        UINT mode,
+        D3DDISPLAYMODE* mode_ptr);
+
+    static HRESULT d3d9_get_device_caps(
+        D3DDEVTYPE device_type,
+        D3DCAPS9* caps_ptr);
+
+    static HRESULT d3d9_check_device_format(
+        D3DDEVTYPE device_type,
+        D3DFORMAT adapter_format,
+        DWORD usage,
+        D3DRESOURCETYPE resource_type,
+        D3DFORMAT check_format);
+
+    static HRESULT d3d9_check_device_type(
+        D3DDEVTYPE device_type,
+        D3DFORMAT adapter_format,
+        D3DFORMAT back_buffer_format,
+        BOOL windowed);
 
 
     HRESULT initialize(
@@ -624,6 +661,8 @@ public:
     using RenderState = std::array<DWORD,max_render_state>;
     using RenderStateChanges = std::bitset<max_render_state>;
 
+
+    ID3d9Impl* d3d9;
 
     RenderState render_state;
     RenderStateChanges render_state_changes;

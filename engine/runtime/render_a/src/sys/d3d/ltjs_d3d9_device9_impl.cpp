@@ -1,6 +1,7 @@
 #include "precompile.h"
 #include "ltjs_d3d9_device9_impl.h"
 #include "ltjs_d3d9_exception.h"
+#include "ltjs_d3d9_id3d9_impl.h"
 #include "ltjs_d3d9_wrapper.h"
 
 
@@ -933,22 +934,468 @@ IFACEMETHODIMP Device9Impl::CreateQuery(
 // =========
 // Internals
 
-Device9Impl::Device9Impl() :
-    render_state(),
-    render_state_changes(),
-    ogl_error_message(),
-    ogl_vertex_shader_object(),
-    ogl_vertex_shader_warning_message(),
-    ogl_fragment_shader_object(),
-    ogl_fragment_shader_warning_message(),
-    ogl_program_object(),
-    ogl_program_warning_message()
+Device9Impl::Device9Impl(
+    ID3d9Impl* id3d9_impl) :
+        d3d9(id3d9_impl),
+        render_state(),
+        render_state_changes(),
+        ogl_error_message(),
+        ogl_vertex_shader_object(),
+        ogl_vertex_shader_warning_message(),
+        ogl_fragment_shader_object(),
+        ogl_fragment_shader_warning_message(),
+        ogl_program_object(),
+        ogl_program_warning_message()
 {
 }
 
 Device9Impl::~Device9Impl()
 {
     uninitialize();
+}
+
+HRESULT Device9Impl::d3d9_get_adapter_identifier(
+    DWORD flags,
+    D3DADAPTER_IDENTIFIER9 *id_ptr)
+{
+    if (flags != 0) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!id_ptr) {
+        return D3DERR_INVALIDCALL;
+    }
+
+
+    static bool is_initialized;
+    static D3DADAPTER_IDENTIFIER9 id;
+
+    if (!is_initialized) {
+        const auto driver_name = "";
+        const auto description = "Primary Display Driver";
+        const auto device_name = "\\\\.\\DISPLAY1";
+
+        std::string::traits_type::copy(
+            id.Driver,
+            driver_name,
+            std::string::traits_type::length(
+                driver_name)
+        );
+
+        std::string::traits_type::copy(
+            id.Description,
+            description,
+            std::string::traits_type::length(
+                description)
+        );
+
+        std::string::traits_type::copy(
+            id.DeviceName,
+            device_name,
+            std::string::traits_type::length(
+                device_name)
+        );
+
+        is_initialized = true;
+    }
+
+    *id_ptr = id;
+
+    return D3D_OK;
+}
+
+HRESULT Device9Impl::d3d9_get_adapter_display_mode(
+    D3DDISPLAYMODE *mode_ptr)
+{
+    if (!mode_ptr) {
+        return D3DERR_INVALIDCALL;
+    }
+
+
+    D3DDISPLAYMODE ddm;
+    ZeroMemory(&ddm, sizeof(ddm));
+
+    DEVMODEA dm;
+    ZeroMemory(&dm, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+
+    auto enum_display_settings_result = ::EnumDisplaySettingsA(
+        nullptr,
+        ENUM_CURRENT_SETTINGS,
+        &dm
+    );
+
+    if (enum_display_settings_result != FALSE &&
+        dm.dmBitsPerPel == 32)
+    {
+        ddm.Width = dm.dmPelsWidth;
+        ddm.Height = dm.dmPelsHeight;
+        ddm.RefreshRate = dm.dmDisplayFrequency;
+        ddm.Format = D3DFMT_X8R8G8B8;
+    }
+
+    *mode_ptr = ddm;
+
+    return D3D_OK;
+}
+
+UINT Device9Impl::d3d9_get_adapter_mode_count(
+    D3DFORMAT format)
+{
+    if (format != D3DFMT_X8R8G8B8) {
+        return 0;
+    }
+
+
+    UINT mode_count = 0;
+
+    for (DWORD i = 0; ; ++i) {
+        DEVMODEA dm;
+        ZeroMemory(&dm, sizeof(dm));
+        dm.dmSize = sizeof(dm);
+
+        auto enum_display_settings_result = ::EnumDisplaySettingsA(
+            nullptr,
+            i,
+            &dm
+        );
+
+        if (enum_display_settings_result == FALSE) {
+            break;
+        }
+
+        if (dm.dmBitsPerPel != 32) {
+            continue;
+        }
+
+        mode_count += 1;
+    }
+
+    return mode_count;
+}
+
+HRESULT Device9Impl::d3d9_enum_adapter_modes(
+    D3DFORMAT format,
+    UINT mode,
+    D3DDISPLAYMODE* mode_ptr)
+{
+    if (format != D3DFMT_X8R8G8B8) {
+        return D3DERR_NOTAVAILABLE;
+    }
+
+    if (!mode_ptr) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    ZeroMemory(mode_ptr, sizeof(*mode_ptr));
+
+    DWORD mode_index = 0;
+
+    for (DWORD i = 0; ; ++i) {
+        DEVMODEA dm;
+        ZeroMemory(&dm, sizeof(dm));
+        dm.dmSize = sizeof(dm);
+
+        auto enum_display_settings_result = ::EnumDisplaySettingsA(
+            nullptr,
+            i,
+            &dm
+        );
+
+        if (enum_display_settings_result == FALSE) {
+            return D3DERR_NOTAVAILABLE;
+        }
+
+        if (dm.dmBitsPerPel != 32) {
+            continue;
+        }
+
+        if (mode_index == mode) {
+            D3DDISPLAYMODE ddm;
+            ZeroMemory(&ddm, sizeof(ddm));
+
+            ddm.Width = dm.dmPelsWidth;
+            ddm.Height = dm.dmPelsHeight;
+            ddm.RefreshRate = dm.dmDisplayFrequency;
+            ddm.Format = D3DFMT_X8R8G8B8;
+
+            *mode_ptr = ddm;
+
+            return D3D_OK;
+        }
+
+        mode_index += 1;
+    }
+}
+
+HRESULT Device9Impl::d3d9_get_device_caps(
+    D3DDEVTYPE device_type,
+    D3DCAPS9* caps_ptr)
+{
+    if (device_type != D3DDEVTYPE_HAL) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!caps_ptr) {
+        return D3DERR_INVALIDCALL;
+    }
+
+
+    D3DCAPS9 caps;
+    ZeroMemory(&caps, sizeof(caps));
+
+    auto is_succeed = true;
+
+    auto instance_handle =
+        ::GetModuleHandleW(nullptr);
+
+
+    // Register window class
+    //
+
+    ATOM window_class_id = 0;
+
+    if (is_succeed) {
+        WNDCLASSEXW wce;
+        ZeroMemory(&wce, sizeof(wce));
+        wce.cbSize = sizeof(wce);
+        wce.style = CS_OWNDC;
+        wce.lpfnWndProc = ::DefWindowProcW;
+        wce.hInstance = instance_handle;
+        wce.hbrBackground = static_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
+        wce.lpszClassName = L"LTJS Dummy Window Class";
+
+        window_class_id = ::RegisterClassExW(
+            &wce);
+
+        if (window_class_id == 0) {
+            is_succeed = false;
+        }
+    }
+
+
+    // Create a window
+    //
+
+    HWND window_handle = nullptr;
+
+    if (is_succeed) {
+        window_handle = ::CreateWindowExW(
+            0, // extended style
+            reinterpret_cast<LPCWSTR>(
+                static_cast<size_t>(window_class_id)), // class name/atom
+            L"Dummy Window", // title
+            WS_BORDER, // the style of the window
+            0, // x
+            0, // y
+            16, // width
+            16, // height
+            nullptr, // a handle to the parent window
+            nullptr, // a handle to a menu
+            nullptr, // a handle to the instance
+            nullptr // custom parameter
+        );
+
+        if (!window_handle) {
+            is_succeed = false;
+        }
+    }
+
+
+    // Initialize OpenGL context
+    //
+
+    auto& wrapper = Wrapper::get_singleton();
+
+    if (is_succeed) {
+        is_succeed = wrapper.initialize_ogl_context(
+            window_handle);
+    }
+
+
+    // Get OpenGL implementation dependant values
+    //
+
+    GLint max_texture_size = 0;
+
+    if (is_succeed) {
+        ::glGetIntegerv(
+            GL_MAX_TEXTURE_SIZE,
+            &max_texture_size);
+    }
+
+
+    GLint max_texture_image_units = 0;
+
+    if (is_succeed) {
+        ::glGetIntegerv(
+            GL_MAX_TEXTURE_IMAGE_UNITS,
+            &max_texture_image_units);
+    }
+
+
+    // Set Direct3D caps
+    //
+
+    if (is_succeed) {
+        const DWORD filter_caps =
+            D3DPTFILTERCAPS_MAGFANISOTROPIC |
+            D3DPTFILTERCAPS_MINFANISOTROPIC;
+
+        caps.DeviceType = D3DDEVTYPE_HAL;
+        caps.AdapterOrdinal = D3DADAPTER_DEFAULT;
+        caps.PresentationIntervals = D3DPRESENT_INTERVAL_ONE;
+        caps.DevCaps = D3DDEVCAPS_HWTRANSFORMANDLIGHT;
+
+        caps.RasterCaps =
+            D3DPRASTERCAPS_FOGVERTEX |
+            D3DPRASTERCAPS_ZFOG |
+            D3DPRASTERCAPS_ZTEST;
+
+        caps.SrcBlendCaps = D3DPBLENDCAPS_ONE;
+        caps.DestBlendCaps = D3DPBLENDCAPS_ONE;
+
+        caps.TextureCaps =
+            D3DPTEXTURECAPS_ALPHA |
+            D3DPTEXTURECAPS_MIPCUBEMAP |
+            D3DPTEXTURECAPS_MIPMAP;
+
+        caps.TextureFilterCaps = filter_caps;
+        caps.MaxTextureWidth = static_cast<DWORD>(max_texture_size);
+        caps.MaxTextureHeight = static_cast<DWORD>(max_texture_size);
+
+        caps.TextureOpCaps =
+            D3DTEXOPCAPS_ADD |
+            D3DTEXOPCAPS_BLENDCURRENTALPHA |
+            D3DTEXOPCAPS_BLENDFACTORALPHA |
+            D3DTEXOPCAPS_BLENDTEXTUREALPHA |
+            D3DTEXOPCAPS_MODULATE |
+            D3DTEXOPCAPS_MODULATE2X |
+            D3DTEXOPCAPS_SELECTARG1 |
+            D3DTEXOPCAPS_SELECTARG2;
+
+        caps.MaxTextureBlendStages = max_texture_image_units;
+        caps.MaxVertexBlendMatrices = 4;
+        caps.MaxVertexBlendMatrixIndex = 255;
+        caps.VertexShaderVersion = D3DVS_VERSION(1, 1);
+        caps.PixelShaderVersion = D3DVS_VERSION(1, 1);
+        caps.MasterAdapterOrdinal = D3DADAPTER_DEFAULT;
+
+        caps.VertexTextureFilterCaps = filter_caps;
+    }
+
+
+    // Clean up
+    //
+
+    wrapper.uninitialize_ogl_context();
+
+    if (window_handle) {
+        static_cast<void>(::DestroyWindow(
+            window_handle));
+    }
+
+    if (window_class_id != 0) {
+        static_cast<void>(::UnregisterClassW(
+            reinterpret_cast<LPCWSTR>(static_cast<size_t>(window_class_id)),
+            instance_handle));
+    }
+
+
+    if (is_succeed) {
+        *caps_ptr = caps;
+        return D3D_OK;
+    }
+
+    return D3DERR_INVALIDCALL;
+}
+
+HRESULT Device9Impl::d3d9_check_device_format(
+    D3DDEVTYPE device_type,
+    D3DFORMAT adapter_format,
+    DWORD usage,
+    D3DRESOURCETYPE resource_type,
+    D3DFORMAT check_format)
+{
+    if (device_type != D3DDEVTYPE_HAL) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    const DWORD unsupported_usage_flags = (
+        D3DUSAGE_DEPTHSTENCIL) ^ 0xFFFFFFFF;
+
+    if ((usage & unsupported_usage_flags) != 0) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    switch (resource_type) {
+    case D3DRTYPE_SURFACE:
+        switch (check_format) {
+        case D3DFMT_D24X8:
+            if ((usage & D3DUSAGE_DEPTHSTENCIL) == 0) {
+                return D3DERR_INVALIDCALL;
+            }
+            break;
+
+        default:
+            return D3DERR_INVALIDCALL;
+        }
+        break;
+
+    case D3DRTYPE_TEXTURE:
+        switch (check_format) {
+        case D3DFMT_A8R8G8B8:
+        case D3DFMT_X8R8G8B8:
+        case D3DFMT_R8G8B8:
+        case D3DFMT_A4R4G4B4:
+        case D3DFMT_A1R5G5B5:
+            break;
+
+        default:
+            return D3DERR_INVALIDCALL;
+        }
+        break;
+
+    default:
+        return D3DERR_INVALIDCALL;
+    }
+
+    return D3D_OK;
+}
+
+HRESULT Device9Impl::d3d9_check_device_type(
+    D3DDEVTYPE device_type,
+    D3DFORMAT adapter_format,
+    D3DFORMAT back_buffer_format,
+    BOOL windowed)
+{
+    if (device_type != D3DDEVTYPE_HAL) {
+        return D3DERR_NOTAVAILABLE;
+    }
+
+    switch (adapter_format) {
+    case D3DFMT_X8R8G8B8:
+        break;
+
+    default:
+        return D3DERR_NOTAVAILABLE;
+    }
+
+    switch (back_buffer_format) {
+    case D3DFMT_UNKNOWN:
+        if (windowed == FALSE) {
+            return D3DERR_NOTAVAILABLE;
+        }
+        break;
+
+    case D3DFMT_X8R8G8B8:
+        break;
+
+    default:
+        return D3DERR_NOTAVAILABLE;
+    }
+
+    return D3D_OK;
 }
 
 HRESULT Device9Impl::initialize(
@@ -1095,7 +1542,7 @@ bool Device9Impl::validate_presentation_parameters(
         return false;
     }
 
-    if (pp.AutoDepthStencilFormat != D3DFMT_D24S8) {
+    if (pp.AutoDepthStencilFormat != D3DFMT_D24X8) {
         return false;
     }
 

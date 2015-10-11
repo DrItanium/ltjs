@@ -130,26 +130,6 @@ public:
 
     virtual ~ID3d9Impl();
 
-
-private:
-    using DisplayModes = std::vector<D3DDISPLAYMODE>;
-
-
-    bool has_adapter_;
-    D3DADAPTER_IDENTIFIER9 adapterId_;
-    DisplayModes displayModes_;
-    int currentDisplayModeIndex_;
-    D3DCAPS9 caps_;
-
-
-    void initialize();
-
-    void initialize_adapter_id();
-
-    void initialize_display_modes();
-
-    void initialize_caps();
-
     // Internals
     // =========
 }; // ID3d9Impl
