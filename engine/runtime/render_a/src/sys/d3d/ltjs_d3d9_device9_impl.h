@@ -14,6 +14,7 @@
 #include <bitset>
 #include <string>
 #include <d3d9.h>
+#include <d3dx9.h>
 #include "GL/glcorearb.h"
 #include "ltjs_d3d9_unknown_impl.h"
 
@@ -617,6 +618,8 @@ public:
 
     void set_default_render_state();
 
+    void set_default_matrices();
+
 
     bool ogl_create_shader(
         GLenum shader_type,
@@ -654,6 +657,7 @@ public:
 
     //
     static const int max_render_state = 256;
+    static const int max_world_matrices = 256;
 
     static const GLchar* const ogl_vertex_shader_source;
     static const GLchar* const ogl_fragment_shader_source;
@@ -661,11 +665,23 @@ public:
     using RenderState = std::array<DWORD,max_render_state>;
     using RenderStateChanges = std::bitset<max_render_state>;
 
+    using WorldMatrices = std::array<D3DXMATRIX,max_world_matrices>;
+    using WorldMatricesChanges = std::bitset<max_world_matrices>;
+
 
     ID3d9Impl* d3d9;
 
     RenderState render_state;
     RenderStateChanges render_state_changes;
+
+    D3DXMATRIX view_matrix;
+    bool view_matrix_changed;
+
+    D3DXMATRIX projection_matrix;
+    bool projection_matrix_changed;
+
+    WorldMatrices world_matrices;
+    WorldMatricesChanges world_matrices_changes;
 
     std::string ogl_error_message;
 

@@ -939,6 +939,12 @@ Device9Impl::Device9Impl(
         d3d9(id3d9_impl),
         render_state(),
         render_state_changes(),
+        view_matrix(),
+        view_matrix_changed(),
+        projection_matrix(),
+        projection_matrix_changed(),
+        world_matrices{},
+        world_matrices_changes(),
         ogl_error_message(),
         ogl_vertex_shader_object(),
         ogl_vertex_shader_warning_message(),
@@ -1276,7 +1282,7 @@ HRESULT Device9Impl::d3d9_get_device_caps(
 
         caps.MaxTextureBlendStages = max_texture_image_units;
         caps.MaxVertexBlendMatrices = 4;
-        caps.MaxVertexBlendMatrixIndex = 255;
+        caps.MaxVertexBlendMatrixIndex = max_world_matrices - 1;
         caps.VertexShaderVersion = D3DVS_VERSION(1, 1);
         caps.PixelShaderVersion = D3DVS_VERSION(1, 1);
         caps.MasterAdapterOrdinal = D3DADAPTER_DEFAULT;
@@ -1428,6 +1434,11 @@ HRESULT Device9Impl::initialize(
     }
 
     if (is_succeed) {
+        set_default_render_state();
+        set_default_matrices();
+    }
+
+    if (is_succeed) {
         return D3D_OK;
     } else {
         uninitialize();
@@ -1484,6 +1495,21 @@ void Device9Impl::set_default_render_state()
     render_state[D3DRS_DEPTHBIAS] = 0;
 
     render_state_changes.set();
+}
+
+void Device9Impl::set_default_matrices()
+{
+    static_cast<void>(::D3DXMatrixIdentity(&view_matrix));
+    view_matrix_changed = true;
+
+    static_cast<void>(::D3DXMatrixIdentity(&projection_matrix));
+    projection_matrix_changed = true;
+
+    for (int i = 0; i < max_world_matrices; ++i) {
+        static_cast<void>(::D3DXMatrixIdentity(&world_matrices[i]));
+    }
+
+    world_matrices_changes.set();
 }
 
 bool Device9Impl::validate_behavior_flags(
