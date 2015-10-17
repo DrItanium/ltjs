@@ -1489,28 +1489,15 @@ void Device9Impl::set_default_render_state()
 bool Device9Impl::validate_behavior_flags(
     DWORD flags)
 {
-    const DWORD all_vertex_flags =
-        D3DCREATE_HARDWARE_VERTEXPROCESSING |
-        D3DCREATE_MIXED_VERTEXPROCESSING |
-        D3DCREATE_SOFTWARE_VERTEXPROCESSING;
+    const DWORD unsupported_flags = (
+        D3DCREATE_MULTITHREADED |
+        D3DCREATE_MIXED_VERTEXPROCESSING) ^ 0xFFFFFFFF;
 
-    auto vertex_mask = flags & all_vertex_flags;
-
-    if (vertex_mask == 0) {
+    if (flags == 0) {
         return false;
     }
 
-    switch (vertex_mask) {
-    case D3DCREATE_HARDWARE_VERTEXPROCESSING:
-    case D3DCREATE_MIXED_VERTEXPROCESSING:
-    case D3DCREATE_SOFTWARE_VERTEXPROCESSING:
-        break;
-
-    default:
-        return false;
-    }
-
-    if ((flags & D3DCREATE_PUREDEVICE) != 0) {
+    if ((flags & unsupported_flags) != 0) {
         return false;
     }
 
@@ -1522,15 +1509,26 @@ bool Device9Impl::validate_presentation_parameters(
 {
     auto& pp = presentation_parameters;
 
+    switch (pp.BackBufferFormat) {
+    case D3DFMT_UNKNOWN:
+    case D3DFMT_X8R8G8B8:
+        break;
+
+    default:
+        return false;
+    }
+
+    if (pp.BackBufferCount != 1) {
+        return false;
+    }
+
     if (pp.MultiSampleType != D3DMULTISAMPLE_NONE &&
         pp.SwapEffect != D3DSWAPEFFECT_DISCARD)
     {
         return false;
     }
 
-    if (pp.SwapEffect == D3DSWAPEFFECT_COPY &&
-        pp.BackBufferCount != 1)
-    {
+    if (pp.SwapEffect != D3DSWAPEFFECT_COPY) {
         return false;
     }
 
@@ -1543,6 +1541,10 @@ bool Device9Impl::validate_presentation_parameters(
     }
 
     if (pp.AutoDepthStencilFormat != D3DFMT_D24X8) {
+        return false;
+    }
+
+    if (pp.Flags != 0) {
         return false;
     }
 
