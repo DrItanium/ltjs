@@ -183,6 +183,7 @@ set(
     ../../../../world/src/worldtreehelper.h
     ltjs_d3d9_device9_impl.h
     ltjs_d3d9_exception.h
+    ltjs_d3d9_fvf.h
     ltjs_d3d9_id3d9_impl.h
     ltjs_d3d9_index_buffer9_impl.h
     ltjs_d3d9_surface9_impl.h
@@ -275,6 +276,7 @@ set(
     ltjs_d3d9_device9_impl.cpp
     ltjs_d3d9_dsurface9_impl.cpp
     ltjs_d3d9_exception.cpp
+    ltjs_d3d9_fvf.cpp
     ltjs_d3d9_id3d9_impl.cpp
     ltjs_d3d9_index_buffer9_impl.cpp
     ltjs_d3d9_texture9_impl.cpp
