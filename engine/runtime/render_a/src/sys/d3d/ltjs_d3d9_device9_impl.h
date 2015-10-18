@@ -670,6 +670,7 @@ public:
 
 
     ID3d9Impl* d3d9;
+    D3DCAPS9 d3d9_caps;
 
     RenderState render_state;
     RenderStateChanges render_state_changes;

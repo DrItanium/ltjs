@@ -92,7 +92,13 @@ IFACEMETHODIMP Device9Impl::GetDirect3D(
 IFACEMETHODIMP Device9Impl::GetDeviceCaps(
     D3DCAPS9* pCaps)
 {
-    throw Exception("Not implemented.");
+    if (!pCaps) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    *pCaps = d3d9_caps;
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::GetDisplayMode(
@@ -937,6 +943,7 @@ IFACEMETHODIMP Device9Impl::CreateQuery(
 Device9Impl::Device9Impl(
     ID3d9Impl* id3d9_impl) :
         d3d9(id3d9_impl),
+        d3d9_caps(),
         render_state(),
         render_state_changes(),
         view_matrix(),
@@ -1422,6 +1429,14 @@ HRESULT Device9Impl::initialize(
 
     auto is_succeed = true;
 
+    if (is_succeed) {
+        auto get_device_caps_result = d3d9_get_device_caps(
+            D3DDEVTYPE_HAL,
+            &d3d9_caps);
+
+        is_succeed = (get_device_caps_result == D3D_OK);
+    }
+
     auto& wrapper = Wrapper::get_singleton();
 
     if (is_succeed) {
@@ -1570,7 +1585,7 @@ bool Device9Impl::validate_presentation_parameters(
         return false;
     }
 
-    if (pp.Flags != 0) {
+    if (pp.Flags != D3DPRESENTFLAG_LOCKABLE_BACKBUFFER) {
         return false;
     }
 
