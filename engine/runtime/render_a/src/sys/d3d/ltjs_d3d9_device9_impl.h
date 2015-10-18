@@ -642,6 +642,10 @@ public:
     static bool validate_presentation_parameters(
         const D3DPRESENT_PARAMETERS& presentation_parameters);
 
+    static void validate_render_state_value(
+        D3DRENDERSTATETYPE render_state_type,
+        DWORD value);
+
     static DWORD float_to_dword(
         const float value);
 

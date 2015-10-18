@@ -491,14 +491,69 @@ IFACEMETHODIMP Device9Impl::SetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD Value)
 {
-    throw Exception("Not implemented.");
+    validate_render_state_value(
+        State,
+        Value);
+
+    if (render_state[State] != Value) {
+        render_state[State] = Value;
+        render_state_changes.set(State);
+    }
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::GetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD* pValue)
 {
-    throw Exception("Not implemented.");
+    switch(State) {
+    case D3DRS_ZENABLE:
+    case D3DRS_FILLMODE:
+    case D3DRS_SHADEMODE:
+    case D3DRS_ZWRITEENABLE:
+    case D3DRS_ALPHATESTENABLE:
+    case D3DRS_SRCBLEND:
+    case D3DRS_DESTBLEND:
+    case D3DRS_CULLMODE:
+    case D3DRS_ZFUNC:
+    case D3DRS_ALPHAREF:
+    case D3DRS_ALPHAFUNC:
+    case D3DRS_DITHERENABLE:
+    case D3DRS_ALPHABLENDENABLE:
+    case D3DRS_FOGENABLE:
+    case D3DRS_SPECULARENABLE:
+    case D3DRS_FOGCOLOR:
+    case D3DRS_FOGTABLEMODE:
+    case D3DRS_FOGSTART:
+    case D3DRS_FOGEND:
+    case D3DRS_TEXTUREFACTOR:
+    case D3DRS_CLIPPING:
+    case D3DRS_LIGHTING:
+    case D3DRS_AMBIENT:
+    case D3DRS_FOGVERTEXMODE:
+    case D3DRS_COLORVERTEX:
+    case D3DRS_NORMALIZENORMALS:
+    case D3DRS_DIFFUSEMATERIALSOURCE:
+    case D3DRS_SPECULARMATERIALSOURCE:
+    case D3DRS_AMBIENTMATERIALSOURCE:
+    case D3DRS_EMISSIVEMATERIALSOURCE:
+    case D3DRS_VERTEXBLEND:
+    case D3DRS_INDEXEDVERTEXBLENDENABLE:
+    case D3DRS_SLOPESCALEDEPTHBIAS:
+    case D3DRS_DEPTHBIAS:
+        break;
+
+    default:
+        throw Exception("Unsupported render state type.");
+    }
+
+    if (!pValue) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    *pValue = render_state[State];
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::CreateStateBlock(
@@ -1590,6 +1645,345 @@ bool Device9Impl::validate_presentation_parameters(
     }
 
     return true;
+}
+
+void Device9Impl::validate_render_state_value(
+    D3DRENDERSTATETYPE render_state_type,
+    DWORD value)
+{
+    switch(render_state_type) {
+    case D3DRS_ZENABLE:
+        switch (value) {
+        case D3DZB_FALSE:
+        case D3DZB_TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ZENABLE value.");
+        }
+        break;
+
+    case D3DRS_FILLMODE:
+        switch (value) {
+        case D3DFILL_SOLID:
+        case D3DFILL_WIREFRAME:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_FILLMODE value.");
+        }
+        break;
+
+    case D3DRS_SHADEMODE:
+        switch (value) {
+        case D3DSHADE_GOURAUD:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_SHADEMODE value.");
+        }
+        break;
+
+    case D3DRS_ZWRITEENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ZWRITEENABLE value.");
+        }
+        break;
+
+    case D3DRS_ALPHATESTENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ALPHATESTENABLE value.");
+        }
+        break;
+
+    case D3DRS_SRCBLEND:
+        switch (value) {
+        case D3DBLEND_DESTCOLOR:
+        case D3DBLEND_INVDESTCOLOR:
+        case D3DBLEND_ONE:
+        case D3DBLEND_SRCALPHA:
+        case D3DBLEND_ZERO:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_SRCBLEND value.");
+        }
+        break;
+
+    case D3DRS_DESTBLEND:
+        switch (value) {
+        case D3DBLEND_DESTCOLOR:
+        case D3DBLEND_INVSRCALPHA:
+        case D3DBLEND_INVSRCCOLOR:
+        case D3DBLEND_INVDESTCOLOR:
+        case D3DBLEND_ONE:
+        case D3DBLEND_SRCCOLOR:
+        case D3DBLEND_ZERO:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_DESTBLEND value.");
+        }
+        break;
+
+    case D3DRS_CULLMODE:
+        switch (value) {
+        case D3DCULL_NONE:
+        case D3DCULL_CW:
+        case D3DCULL_CCW:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_CULLMODE value.");
+        }
+        break;
+
+    case D3DRS_ZFUNC:
+        switch (value) {
+        case TRUE:
+        case D3DCMP_ALWAYS:
+        case D3DCMP_EQUAL:
+        case D3DCMP_LESSEQUAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ZFUNC value.");
+        }
+        break;
+
+    case D3DRS_ALPHAREF:
+        if (value > 0xFF) {
+            throw Exception("Unsupported D3DRS_ALPHAREF value.");
+        }
+        break;
+
+    case D3DRS_ALPHAFUNC:
+        switch (value) {
+        case D3DCMP_ALWAYS:
+        case D3DCMP_EQUAL:
+        case D3DCMP_GREATEREQUAL:
+        case D3DCMP_GREATER:
+        case D3DCMP_LESS:
+        case D3DCMP_LESSEQUAL:
+        case D3DCMP_NOTEQUAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ALPHAFUNC value.");
+        }
+        break;
+
+    case D3DRS_DITHERENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_DITHERENABLE value.");
+        }
+        break;
+
+    case D3DRS_ALPHABLENDENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_ALPHABLENDENABLE value.");
+        }
+        break;
+
+    case D3DRS_FOGENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_FOGENABLE value.");
+        }
+        break;
+
+    case D3DRS_SPECULARENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_SPECULARENABLE value.");
+        }
+        break;
+
+    case D3DRS_FOGCOLOR:
+        break;
+
+    case D3DRS_FOGTABLEMODE:
+        switch (value) {
+        case D3DFOG_NONE:
+        case D3DFOG_LINEAR:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_FOGTABLEMODE value.");
+        }
+        break;
+
+    case D3DRS_FOGSTART:
+        break;
+
+    case D3DRS_FOGEND:
+        break;
+
+    case D3DRS_TEXTUREFACTOR:
+        break;
+
+    case D3DRS_CLIPPING:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_CLIPPING value.");
+        }
+        break;
+
+    case D3DRS_LIGHTING:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_LIGHTING value.");
+        }
+        break;
+
+    case D3DRS_AMBIENT:
+        break;
+
+    case D3DRS_FOGVERTEXMODE:
+        switch (value) {
+        case D3DFOG_NONE:
+        case D3DFOG_LINEAR:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_FOGVERTEXMODE value.");
+        }
+        break;
+
+    case D3DRS_COLORVERTEX:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_COLORVERTEX value.");
+        }
+        break;
+
+    case D3DRS_NORMALIZENORMALS:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_NORMALIZENORMALS value.");
+        }
+        break;
+
+    case D3DRS_DIFFUSEMATERIALSOURCE:
+        switch (value) {
+        case D3DMCS_COLOR1:
+        case D3DMCS_MATERIAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_DIFFUSEMATERIALSOURCE value.");
+        }
+        break;
+
+    case D3DRS_SPECULARMATERIALSOURCE:
+        switch (value) {
+        case D3DMCS_COLOR2:
+        case D3DMCS_MATERIAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_SPECULARMATERIALSOURCE value.");
+        }
+        break;
+
+    case D3DRS_AMBIENTMATERIALSOURCE:
+        switch (value) {
+        case D3DMCS_MATERIAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_AMBIENTMATERIALSOURCE value.");
+        }
+        break;
+
+    case D3DRS_EMISSIVEMATERIALSOURCE:
+        switch (value) {
+        case D3DMCS_MATERIAL:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_EMISSIVEMATERIALSOURCE value.");
+        }
+        break;
+
+    case D3DRS_VERTEXBLEND:
+        switch (value) {
+        case D3DVBF_DISABLE:
+        case D3DVBF_0WEIGHTS:
+        case D3DVBF_1WEIGHTS:
+        case D3DVBF_2WEIGHTS:
+        case D3DVBF_3WEIGHTS:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_VERTEXBLEND value.");
+        }
+        break;
+
+    case D3DRS_INDEXEDVERTEXBLENDENABLE:
+        switch (value) {
+        case FALSE:
+        case TRUE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DRS_INDEXEDVERTEXBLENDENABLE value.");
+        }
+        break;
+
+    case D3DRS_SLOPESCALEDEPTHBIAS:
+        break;
+
+    case D3DRS_DEPTHBIAS:
+        break;
+
+    default:
+        throw Exception("Unsupported render state type.");
+    }
 }
 
 DWORD Device9Impl::float_to_dword(
