@@ -675,6 +675,7 @@ public:
 
     ID3d9Impl* d3d9;
     D3DCAPS9 d3d9_caps;
+    BOOL d3d9_software_vertex_processing;
 
     RenderState render_state;
     RenderStateChanges render_state_changes;

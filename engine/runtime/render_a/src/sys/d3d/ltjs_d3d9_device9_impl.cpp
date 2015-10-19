@@ -679,12 +679,20 @@ IFACEMETHODIMP Device9Impl::GetScissorRect(
 IFACEMETHODIMP Device9Impl::SetSoftwareVertexProcessing(
     BOOL bSoftware)
 {
-    throw Exception("Not implemented.");
+    switch (bSoftware) {
+    case FALSE:
+    case TRUE:
+        d3d9_software_vertex_processing = bSoftware;
+        return D3D_OK;
+
+    default:
+        return D3DERR_INVALIDCALL;
+    }
 }
 
 IFACEMETHODIMP_(BOOL) Device9Impl::GetSoftwareVertexProcessing()
 {
-    throw Exception("Not implemented.");
+    return d3d9_software_vertex_processing;
 }
 
 IFACEMETHODIMP Device9Impl::SetNPatchMode(
@@ -999,6 +1007,7 @@ Device9Impl::Device9Impl(
     ID3d9Impl* id3d9_impl) :
         d3d9(id3d9_impl),
         d3d9_caps(),
+        d3d9_software_vertex_processing(FALSE),
         render_state(),
         render_state_changes(),
         view_matrix(),
