@@ -605,7 +605,32 @@ IFACEMETHODIMP Device9Impl::GetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD* pValue)
 {
-    throw Exception("Not implemented.");
+    if (Stage > (max_texture_stages - 1)) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!pValue) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    switch (Type) {
+    case D3DTSS_COLOROP:
+    case D3DTSS_COLORARG1:
+    case D3DTSS_COLORARG2:
+    case D3DTSS_ALPHAOP:
+    case D3DTSS_ALPHAARG1:
+    case D3DTSS_ALPHAARG2:
+    case D3DTSS_TEXCOORDINDEX:
+    case D3DTSS_TEXTURETRANSFORMFLAGS:
+        break;
+
+    default:
+        throw Exception("Unsupported texture state type.");
+    }
+
+    *pValue = texture_stages[Stage][Type];
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::SetTextureStageState(
@@ -613,7 +638,20 @@ IFACEMETHODIMP Device9Impl::SetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD Value)
 {
-    throw Exception("Not implemented.");
+    if (Stage > (max_texture_stages - 1)) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    validate_texture_state_value(
+        Type,
+        Value);
+
+    if (texture_stages[Stage][Type] != Value) {
+        texture_stages[Stage][Type] = Value;
+        texture_stages_changes[Stage].set(Type);
+    }
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::GetSamplerState(
@@ -1010,6 +1048,8 @@ Device9Impl::Device9Impl(
         d3d9_software_vertex_processing(FALSE),
         render_state(),
         render_state_changes(),
+        texture_stages{},
+        texture_stages_changes{},
         view_matrix(),
         view_matrix_changed(),
         projection_matrix(),
@@ -1515,6 +1555,7 @@ HRESULT Device9Impl::initialize(
     if (is_succeed) {
         set_default_render_state();
         set_default_matrices();
+        set_default_texture_stages();
     }
 
     if (is_succeed) {
@@ -1589,6 +1630,27 @@ void Device9Impl::set_default_matrices()
     }
 
     world_matrices_changes.set();
+}
+
+void Device9Impl::set_default_texture_stages()
+{
+    for (int i = 0; i < max_texture_stages; ++i) {
+        auto& texture_stage = texture_stages[i];
+
+        texture_stage[D3DTSS_COLOROP] =
+            (i > 0 ? D3DTOP_DISABLE : D3DTOP_MODULATE);
+
+        texture_stage[D3DTSS_COLORARG1] = D3DTA_TEXTURE;
+        texture_stage[D3DTSS_COLORARG2] = D3DTA_CURRENT;
+
+        texture_stage[D3DTSS_ALPHAOP] =
+            (i > 0 ? D3DTOP_DISABLE : D3DTOP_SELECTARG1);
+
+        texture_stage[D3DTSS_ALPHAARG1] = D3DTA_TEXTURE;
+        texture_stage[D3DTSS_ALPHAARG2] = D3DTA_CURRENT;
+        texture_stage[D3DTSS_TEXCOORDINDEX] = i;
+        texture_stage[D3DTSS_TEXTURETRANSFORMFLAGS] = D3DTTFF_DISABLE;
+    }
 }
 
 bool Device9Impl::validate_behavior_flags(
@@ -1992,6 +2054,129 @@ void Device9Impl::validate_render_state_value(
 
     default:
         throw Exception("Unsupported render state type.");
+    }
+}
+
+void Device9Impl::validate_texture_state_value(
+    D3DTEXTURESTAGESTATETYPE texture_state_type,
+    DWORD value)
+{
+    auto no_mod_value = value & (D3DTA_COMPLEMENT ^ 0xFFFFFFFF);
+
+    auto no_tci_value = value & (
+        (D3DTSS_TCI_CAMERASPACEPOSITION |
+            D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR) ^ 0xFFFFFFFF);
+
+    auto no_ttff_value = value & (D3DTTFF_PROJECTED ^ 0xFFFFFFFF);
+
+    switch (texture_state_type) {
+    case D3DTSS_COLOROP:
+        switch (value) {
+        case D3DTOP_ADD:
+        case D3DTOP_ADDSIGNED:
+        case D3DTOP_BLENDCURRENTALPHA:
+        case D3DTOP_BLENDTEXTUREALPHA:
+        case D3DTOP_DISABLE:
+        case D3DTOP_MODULATE:
+        case D3DTOP_MODULATE2X:
+        case D3DTOP_MODULATEALPHA_ADDCOLOR:
+        case D3DTOP_SELECTARG1:
+        case D3DTOP_SELECTARG2:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_COLOROP value.");
+        }
+        break;
+
+    case D3DTSS_COLORARG1:
+        switch (no_mod_value) {
+        case D3DTA_TFACTOR:
+        case D3DTA_TEXTURE:
+        case D3DTA_DIFFUSE:
+        case D3DTA_CURRENT:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_COLORARG1 value.");
+        }
+        break;
+
+    case D3DTSS_COLORARG2:
+        switch (no_mod_value) {
+        case D3DTA_DIFFUSE:
+        case D3DTA_CURRENT:
+        case D3DTA_TFACTOR:
+        case D3DTA_TEXTURE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_COLORARG2 value.");
+        }
+        break;
+
+    case D3DTSS_ALPHAOP:
+        switch (value) {
+        case D3DTOP_SELECTARG1:
+        case D3DTOP_DISABLE:
+        case D3DTOP_MODULATE:
+        case D3DTOP_MODULATE2X:
+        case D3DTOP_SUBTRACT:
+        case D3DTOP_SELECTARG2:
+        case D3DTOP_ADD:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_ALPHAOP value.");
+        }
+        break;
+
+    case D3DTSS_ALPHAARG1:
+        switch (no_mod_value) {
+        case D3DTA_TFACTOR:
+        case D3DTA_TEXTURE:
+        case D3DTA_DIFFUSE:
+        case D3DTA_CURRENT:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_ALPHAARG1 value.");
+        }
+        break;
+
+    case D3DTSS_ALPHAARG2:
+        switch (no_mod_value) {
+        case D3DTA_DIFFUSE:
+        case D3DTA_CURRENT:
+        case D3DTA_TFACTOR:
+        case D3DTA_TEXTURE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_ALPHAARG2 value.");
+        }
+        break;
+
+    case D3DTSS_TEXCOORDINDEX:
+        if (no_tci_value > (max_texture_stages - 1)) {
+            throw Exception("Unsupported D3DTSS_TEXCOORDINDEX value.");
+        }
+        break;
+
+    case D3DTSS_TEXTURETRANSFORMFLAGS:
+        switch (no_ttff_value) {
+        case D3DTTFF_COUNT3:
+        case D3DTTFF_COUNT2:
+        case D3DTTFF_DISABLE:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DTSS_TEXTURETRANSFORMFLAGS value.");
+        }
+        break;
+
+    default:
+        throw Exception("Unsupported texture state type.");
     }
 }
 

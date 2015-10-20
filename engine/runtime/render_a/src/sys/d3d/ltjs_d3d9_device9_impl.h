@@ -620,6 +620,8 @@ public:
 
     void set_default_matrices();
 
+    void set_default_texture_stages();
+
 
     bool ogl_create_shader(
         GLenum shader_type,
@@ -646,6 +648,10 @@ public:
         D3DRENDERSTATETYPE render_state_type,
         DWORD value);
 
+    static void validate_texture_state_value(
+        D3DTEXTURESTAGESTATETYPE texture_state_type,
+        DWORD value);
+
     static DWORD float_to_dword(
         const float value);
 
@@ -662,6 +668,8 @@ public:
     //
     static const int max_render_state = 256;
     static const int max_world_matrices = 256;
+    static const int max_texture_stages = 8;
+    static const int max_texture_states = 25;
 
     static const GLchar* const ogl_vertex_shader_source;
     static const GLchar* const ogl_fragment_shader_source;
@@ -672,6 +680,11 @@ public:
     using WorldMatrices = std::array<D3DXMATRIX,max_world_matrices>;
     using WorldMatricesChanges = std::bitset<max_world_matrices>;
 
+    using TextureState = std::array<DWORD,max_texture_states>;
+    using TextureStages = std::array<TextureState,max_texture_stages>;
+    using TextureStateChanges = std::bitset<max_texture_states>;
+    using TextureStagesChanges = std::array<TextureStateChanges,max_texture_stages>;
+
 
     ID3d9Impl* d3d9;
     D3DCAPS9 d3d9_caps;
@@ -679,6 +692,9 @@ public:
 
     RenderState render_state;
     RenderStateChanges render_state_changes;
+
+    TextureStages texture_stages;
+    TextureStagesChanges texture_stages_changes;
 
     D3DXMATRIX view_matrix;
     bool view_matrix_changed;
