@@ -13,6 +13,7 @@
 
 
 #include <string>
+#include <unordered_set>
 #include <d3d9.h>
 
 
@@ -56,12 +57,17 @@ public:
     IDirect3D9* d3d_create9(
         UINT sdk_version);
 
+    bool ogl_has_extension(
+        const std::string& extension_name) const;
+
     static Wrapper& get_singleton();
 
 
 private:
     using FPDirect3DCreate9 = IDirect3D9* (WINAPI*)(
         UINT SDKVersion);
+
+    using OglExtensions = std::unordered_set<std::string>;
 
 
     bool initialize_d3d9();
@@ -80,6 +86,7 @@ private:
     HMODULE d3d9_module_;
     FPDirect3DCreate9 d3d_create9_;
     std::string error_message_;
+    OglExtensions ogl_extensions_;
 }; // Wrapper
 
 

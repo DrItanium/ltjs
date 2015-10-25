@@ -26,9 +26,11 @@ namespace d3d9 {
 
 
 Wrapper::Wrapper() :
-    error_message_(),
+    mode_(),
     d3d9_module_(),
-    d3d_create9_()
+    d3d_create9_(),
+    error_message_(),
+    ogl_extensions_()
 {
 }
 

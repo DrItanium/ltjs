@@ -10,11 +10,6 @@
 
 #include <list>
 #include <new>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "GL/glcorearb.h"
 #include "ltjs_d3d9_exception.h"
 #include "ltjs_d3d9_id3d9_impl.h"
@@ -47,6 +42,7 @@ PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog_ = nullptr;
 PFNGLGETPROGRAMIVPROC glGetProgramiv_ = nullptr;
 PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog_ = nullptr;
 PFNGLGETSHADERIVPROC glGetShaderiv_ = nullptr;
+PFNGLGETSTRINGIPROC glGetStringi_ = nullptr;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation_ = nullptr;
 PFNGLISPROGRAMPROC glIsProgram_ = nullptr;
 PFNGLISSHADERPROC glIsShader_ = nullptr;
@@ -228,6 +224,15 @@ GLAPI void APIENTRY glGetShaderiv(
         shader,
         pname,
         params);
+}
+
+GLAPI const GLubyte* APIENTRY glGetStringi(
+    GLenum name,
+    GLuint index)
+{
+    return glGetStringi_(
+        name,
+        index);
 }
 
 GLAPI GLint APIENTRY glGetUniformLocation(
@@ -687,6 +692,11 @@ bool Wrapper::initialize_ogl_context(
             missing_symbols);
 
         ogl_get_symbol(
+            "glGetStringi",
+            glGetStringi_,
+            missing_symbols);
+
+        ogl_get_symbol(
             "glGetUniformLocation",
             glGetUniformLocation_,
             missing_symbols);
@@ -739,11 +749,34 @@ bool Wrapper::initialize_ogl_context(
         }
     }
 
+    if (is_succeed) {
+        GLint extension_count = 0;
+
+        ::glGetIntegerv(
+            GL_NUM_EXTENSIONS,
+            &extension_count);
+
+        for (GLint i = 0; i < extension_count; ++i) {
+            auto extension_name = reinterpret_cast<const char*>(::glGetStringi(
+                GL_EXTENSIONS,
+                i));
+
+            ogl_extensions_.emplace(
+                extension_name);
+        }
+    }
+
     if (!is_succeed) {
         uninitialize_ogl_context();
     }
 
     return is_succeed;
+}
+
+bool Wrapper::ogl_has_extension(
+    const std::string& extension_name) const
+{
+    return ogl_extensions_.find(extension_name) != ogl_extensions_.end();
 }
 
 void Wrapper::uninitialize_ogl()
@@ -770,6 +803,7 @@ void Wrapper::uninitialize_ogl()
     glGetProgramiv_ = nullptr;
     glGetShaderInfoLog_ = nullptr;
     glGetShaderiv_ = nullptr;
+    glGetStringi_ = nullptr;
     glGetUniformLocation_ = nullptr;
     glIsProgram_ = nullptr;
     glLinkProgram_ = nullptr;
@@ -778,6 +812,8 @@ void Wrapper::uninitialize_ogl()
     glUniformMatrix4fv_ = nullptr;
     glUseProgram_ = nullptr;
     glVertexAttribPointer_ = nullptr;
+
+    ogl_extensions_.clear();
 
     mode_ = Mode::none;
 }

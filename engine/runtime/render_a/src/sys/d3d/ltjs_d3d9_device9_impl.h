@@ -596,6 +596,12 @@ public:
         D3DDEVTYPE device_type,
         D3DCAPS9* caps_ptr);
 
+    static HRESULT d3d9_get_device_caps(
+        D3DDEVTYPE device_type,
+        D3DCAPS9* caps_ptr,
+        GLfloat& max_texture_lod_bias,
+        GLfloat& max_anisotropy_level);
+
     static HRESULT d3d9_check_device_format(
         D3DDEVTYPE device_type,
         D3DFORMAT adapter_format,
@@ -621,6 +627,8 @@ public:
     void set_default_matrices();
 
     void set_default_texture_stages();
+
+    void set_default_samplers();
 
 
     bool ogl_create_shader(
@@ -652,6 +660,10 @@ public:
         D3DTEXTURESTAGESTATETYPE texture_state_type,
         DWORD value);
 
+    void validate_sampler_state_value(
+        D3DSAMPLERSTATETYPE sampler_state_type,
+        DWORD& value);
+
     static DWORD float_to_dword(
         const float value);
 
@@ -670,6 +682,9 @@ public:
     static const int max_world_matrices = 256;
     static const int max_texture_stages = 8;
     static const int max_texture_states = 25;
+    static const int max_samplers = max_texture_stages;
+    static const int max_sampler_states = 14;
+
 
     static const GLchar* const ogl_vertex_shader_source;
     static const GLchar* const ogl_fragment_shader_source;
@@ -685,6 +700,11 @@ public:
     using TextureStateChanges = std::bitset<max_texture_states>;
     using TextureStagesChanges = std::array<TextureStateChanges,max_texture_stages>;
 
+    using SamplerState = std::array<DWORD,max_sampler_states>;
+    using Samplers = std::array<SamplerState,max_samplers>;
+    using SamplerStateChanges = std::bitset<max_sampler_states>;
+    using SamplersChanges = std::array<SamplerStateChanges,max_samplers>;
+
 
     ID3d9Impl* d3d9;
     D3DCAPS9 d3d9_caps;
@@ -696,6 +716,9 @@ public:
     TextureStages texture_stages;
     TextureStagesChanges texture_stages_changes;
 
+    Samplers samplers;
+    SamplersChanges samplers_changes;
+
     D3DXMATRIX view_matrix;
     bool view_matrix_changed;
 
@@ -704,6 +727,9 @@ public:
 
     WorldMatrices world_matrices;
     WorldMatricesChanges world_matrices_changes;
+
+    GLfloat ogl_max_texture_lod_bias;
+    GLfloat ogl_max_anisotropy_level;
 
     std::string ogl_error_message;
 

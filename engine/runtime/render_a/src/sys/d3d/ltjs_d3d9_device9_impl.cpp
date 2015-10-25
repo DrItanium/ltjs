@@ -659,7 +659,32 @@ IFACEMETHODIMP Device9Impl::GetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD* pValue)
 {
-    throw Exception("Not implemented.");
+    if (Sampler > (max_samplers - 1)) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    if (!pValue) {
+        return D3DERR_INVALIDCALL;
+    }
+
+
+    switch (Type) {
+    case D3DSAMP_ADDRESSU:
+    case D3DSAMP_ADDRESSV:
+    case D3DSAMP_MAGFILTER:
+    case D3DSAMP_MINFILTER:
+    case D3DSAMP_MIPFILTER:
+    case D3DSAMP_MIPMAPLODBIAS:
+    case D3DSAMP_MAXANISOTROPY:
+        break;
+
+    default:
+        throw Exception("Unsupported sampler state.");
+    }
+
+    *pValue = samplers[Sampler][Type];
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::SetSamplerState(
@@ -667,7 +692,20 @@ IFACEMETHODIMP Device9Impl::SetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD Value)
 {
-    throw Exception("Not implemented.");
+    if (Sampler > (max_samplers - 1)) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    validate_sampler_state_value(
+        Type,
+        Value);
+
+    if (samplers[Sampler][Type] != Value) {
+        samplers[Sampler][Type] = Value;
+        samplers_changes[Sampler].set(Type);
+    }
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::ValidateDevice(
@@ -1050,12 +1088,16 @@ Device9Impl::Device9Impl(
         render_state_changes(),
         texture_stages{},
         texture_stages_changes{},
+        samplers{},
+        samplers_changes{},
         view_matrix(),
         view_matrix_changed(),
         projection_matrix(),
         projection_matrix_changed(),
         world_matrices{},
         world_matrices_changes(),
+        ogl_max_texture_lod_bias(),
+        ogl_max_anisotropy_level(),
         ogl_error_message(),
         ogl_vertex_shader_object(),
         ogl_vertex_shader_warning_message(),
@@ -1249,6 +1291,22 @@ HRESULT Device9Impl::d3d9_get_device_caps(
     D3DDEVTYPE device_type,
     D3DCAPS9* caps_ptr)
 {
+    GLfloat max_texture_lod_bias = 0.0F;
+    GLfloat max_anisotropy_level = 0.0F;
+
+    return d3d9_get_device_caps(
+        device_type,
+        caps_ptr,
+        max_texture_lod_bias,
+        max_anisotropy_level);
+}
+
+HRESULT Device9Impl::d3d9_get_device_caps(
+    D3DDEVTYPE device_type,
+    D3DCAPS9* caps_ptr,
+    GLfloat& max_texture_lod_bias,
+    GLfloat& max_anisotropy_level)
+{
     if (device_type != D3DDEVTYPE_HAL) {
         return D3DERR_INVALIDCALL;
     }
@@ -1348,6 +1406,30 @@ HRESULT Device9Impl::d3d9_get_device_caps(
         ::glGetIntegerv(
             GL_MAX_TEXTURE_IMAGE_UNITS,
             &max_texture_image_units);
+    }
+
+
+    max_texture_lod_bias = 0.0F;
+
+    if (is_succeed) {
+        ::glGetFloatv(
+            GL_MAX_TEXTURE_LOD_BIAS,
+            &max_texture_lod_bias);
+    }
+
+
+    max_anisotropy_level = 1.0F;
+
+    if (is_succeed) {
+        if (wrapper.ogl_has_extension(
+            "GL_EXT_texture_filter_anisotropic"))
+        {
+            const GLenum GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF;
+
+            ::glGetFloatv(
+                GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+                &max_anisotropy_level);
+        }
     }
 
 
@@ -1536,7 +1618,9 @@ HRESULT Device9Impl::initialize(
     if (is_succeed) {
         auto get_device_caps_result = d3d9_get_device_caps(
             D3DDEVTYPE_HAL,
-            &d3d9_caps);
+            &d3d9_caps,
+            ogl_max_texture_lod_bias,
+            ogl_max_anisotropy_level);
 
         is_succeed = (get_device_caps_result == D3D_OK);
     }
@@ -1556,6 +1640,7 @@ HRESULT Device9Impl::initialize(
         set_default_render_state();
         set_default_matrices();
         set_default_texture_stages();
+        set_default_samplers();
     }
 
     if (is_succeed) {
@@ -1650,6 +1735,25 @@ void Device9Impl::set_default_texture_stages()
         texture_stage[D3DTSS_ALPHAARG2] = D3DTA_CURRENT;
         texture_stage[D3DTSS_TEXCOORDINDEX] = i;
         texture_stage[D3DTSS_TEXTURETRANSFORMFLAGS] = D3DTTFF_DISABLE;
+
+        texture_stages_changes[i].set();
+    }
+}
+
+void Device9Impl::set_default_samplers()
+{
+    for (int i = 0; i < max_samplers; ++i) {
+        auto& sampler = samplers[i];
+
+        sampler[D3DSAMP_ADDRESSU] = D3DTADDRESS_WRAP;
+        sampler[D3DSAMP_ADDRESSV] = D3DTADDRESS_WRAP;
+        sampler[D3DSAMP_MAGFILTER] = D3DTEXF_POINT;
+        sampler[D3DSAMP_MINFILTER] = D3DTEXF_POINT;
+        sampler[D3DSAMP_MIPFILTER] = D3DTEXF_NONE;
+        sampler[D3DSAMP_MIPMAPLODBIAS] = 0;
+        sampler[D3DSAMP_MAXANISOTROPY] = 1;
+
+        samplers_changes[i].set();
     }
 }
 
@@ -2178,6 +2282,98 @@ void Device9Impl::validate_texture_state_value(
     default:
         throw Exception("Unsupported texture state type.");
     }
+}
+
+void Device9Impl::validate_sampler_state_value(
+    D3DSAMPLERSTATETYPE sampler_state_type,
+    DWORD& value)
+{
+    auto float_value = dword_to_float(value);
+
+    switch (sampler_state_type) {
+    case D3DSAMP_ADDRESSU:
+        switch (value) {
+        case D3DTADDRESS_WRAP:
+        case D3DTADDRESS_CLAMP:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DSAMP_ADDRESSU value.");
+        }
+        break;
+
+    case D3DSAMP_ADDRESSV:
+        switch (value) {
+        case D3DTADDRESS_WRAP:
+        case D3DTADDRESS_CLAMP:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DSAMP_ADDRESSV value.");
+        }
+        break;
+
+    case D3DSAMP_MAGFILTER:
+        switch (value) {
+        case D3DTEXF_ANISOTROPIC:
+        case D3DTEXF_LINEAR:
+        case D3DTEXF_POINT:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DSAMP_MAGFILTER value.");
+        }
+        break;
+
+    case D3DSAMP_MINFILTER:
+        switch (value) {
+        case D3DTEXF_ANISOTROPIC:
+        case D3DTEXF_LINEAR:
+        case D3DTEXF_POINT:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DSAMP_MINFILTER value.");
+        }
+        break;
+
+    case D3DSAMP_MIPFILTER:
+        switch (value) {
+        case D3DTEXF_LINEAR:
+        case D3DTEXF_POINT:
+            break;
+
+        default:
+            throw Exception("Unsupported D3DSAMP_MIPFILTER value.");
+        }
+        break;
+
+    case D3DSAMP_MIPMAPLODBIAS:
+        if (float_value < -ogl_max_texture_lod_bias) {
+            float_value = -ogl_max_texture_lod_bias;
+        }
+
+        if (float_value > ogl_max_texture_lod_bias) {
+            float_value = ogl_max_texture_lod_bias;
+        }
+
+        value = float_to_dword(float_value);
+        break;
+
+    case D3DSAMP_MAXANISOTROPY:
+        if (value < 1) {
+            value = 1;
+        }
+
+        if (value > static_cast<DWORD>(ogl_max_anisotropy_level)) {
+            value = static_cast<DWORD>(ogl_max_anisotropy_level);
+        }
+        break;
+
+    default:
+        throw Exception("Unsupported sampler state type.");
+    }
+
 }
 
 DWORD Device9Impl::float_to_dword(
