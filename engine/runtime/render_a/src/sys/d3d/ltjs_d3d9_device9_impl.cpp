@@ -1760,15 +1760,11 @@ void Device9Impl::set_default_samplers()
 bool Device9Impl::validate_behavior_flags(
     DWORD flags)
 {
-    const DWORD unsupported_flags = (
+    const DWORD supported_flags = (
         D3DCREATE_MULTITHREADED |
         D3DCREATE_MIXED_VERTEXPROCESSING) ^ 0xFFFFFFFF;
 
-    if (flags == 0) {
-        return false;
-    }
-
-    if ((flags & unsupported_flags) != 0) {
+    if (flags != supported_flags) {
         return false;
     }
 
