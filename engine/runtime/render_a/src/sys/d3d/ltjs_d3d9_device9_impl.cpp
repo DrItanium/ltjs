@@ -58,7 +58,8 @@ IFACEMETHODIMP_(ULONG) Device9Impl::AddRef()
 IFACEMETHODIMP_(ULONG) Device9Impl::Release()
 {
     return release(
-        this);
+        this,
+        mutex);
 }
 
 // IUnknown
@@ -436,7 +437,35 @@ IFACEMETHODIMP Device9Impl::GetViewport(
 IFACEMETHODIMP Device9Impl::SetMaterial(
     const D3DMATERIAL9* pMaterial)
 {
-    throw Exception("Not implemented.");
+    if (!pMaterial) {
+        return D3DERR_INVALIDCALL;
+    }
+
+    auto& old_material = material;
+    const auto& new_material = *pMaterial;
+
+    material_changed |=
+        old_material.Diffuse.r == new_material.Diffuse.r ||
+        old_material.Diffuse.g == new_material.Diffuse.g ||
+        old_material.Diffuse.b == new_material.Diffuse.b ||
+        old_material.Diffuse.a == new_material.Diffuse.a ||
+        old_material.Ambient.r == new_material.Ambient.r ||
+        old_material.Ambient.g == new_material.Ambient.g ||
+        old_material.Ambient.b == new_material.Ambient.b ||
+        old_material.Ambient.a == new_material.Ambient.a ||
+        old_material.Specular.r == new_material.Specular.r ||
+        old_material.Specular.g == new_material.Specular.g ||
+        old_material.Specular.b == new_material.Specular.b ||
+        old_material.Specular.a == new_material.Specular.a ||
+        old_material.Emissive.r == new_material.Emissive.r ||
+        old_material.Emissive.g == new_material.Emissive.g ||
+        old_material.Emissive.b == new_material.Emissive.b ||
+        old_material.Emissive.a == new_material.Emissive.a ||
+        old_material.Power == new_material.Power;
+
+    material = *pMaterial;
+
+    return D3D_OK;
 }
 
 IFACEMETHODIMP Device9Impl::GetMaterial(
@@ -491,6 +520,8 @@ IFACEMETHODIMP Device9Impl::SetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD Value)
 {
+    MutexGuard guard_device(mutex);
+
     validate_render_state_value(
         State,
         Value);
@@ -507,6 +538,8 @@ IFACEMETHODIMP Device9Impl::GetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD* pValue)
 {
+    MutexGuard guard_device(mutex);
+
     switch(State) {
     case D3DRS_ZENABLE:
     case D3DRS_FILLMODE:
@@ -605,6 +638,8 @@ IFACEMETHODIMP Device9Impl::GetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD* pValue)
 {
+    MutexGuard guard_device(mutex);
+
     if (Stage > (max_texture_stages - 1)) {
         return D3DERR_INVALIDCALL;
     }
@@ -638,6 +673,8 @@ IFACEMETHODIMP Device9Impl::SetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD Value)
 {
+    MutexGuard guard_device(mutex);
+
     if (Stage > (max_texture_stages - 1)) {
         return D3DERR_INVALIDCALL;
     }
@@ -659,6 +696,8 @@ IFACEMETHODIMP Device9Impl::GetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD* pValue)
 {
+    MutexGuard guard_device(mutex);
+
     if (Sampler > (max_samplers - 1)) {
         return D3DERR_INVALIDCALL;
     }
@@ -692,6 +731,8 @@ IFACEMETHODIMP Device9Impl::SetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD Value)
 {
+    MutexGuard guard_device(mutex);
+
     if (Sampler > (max_samplers - 1)) {
         return D3DERR_INVALIDCALL;
     }
@@ -755,6 +796,8 @@ IFACEMETHODIMP Device9Impl::GetScissorRect(
 IFACEMETHODIMP Device9Impl::SetSoftwareVertexProcessing(
     BOOL bSoftware)
 {
+    MutexGuard guard_device(mutex);
+
     switch (bSoftware) {
     case FALSE:
     case TRUE:
@@ -768,6 +811,8 @@ IFACEMETHODIMP Device9Impl::SetSoftwareVertexProcessing(
 
 IFACEMETHODIMP_(BOOL) Device9Impl::GetSoftwareVertexProcessing()
 {
+    MutexGuard guard_device(mutex);
+
     return d3d9_software_vertex_processing;
 }
 
@@ -1084,6 +1129,7 @@ Device9Impl::Device9Impl(
         d3d9(id3d9_impl),
         d3d9_caps(),
         d3d9_software_vertex_processing(FALSE),
+        mutex(),
         render_state(),
         render_state_changes(),
         texture_stages{},
@@ -1096,6 +1142,8 @@ Device9Impl::Device9Impl(
         projection_matrix_changed(),
         world_matrices{},
         world_matrices_changes(),
+        material(),
+        material_changed(),
         ogl_max_texture_lod_bias(),
         ogl_max_anisotropy_level(),
         ogl_error_message(),
@@ -1110,7 +1158,6 @@ Device9Impl::Device9Impl(
 
 Device9Impl::~Device9Impl()
 {
-    uninitialize();
 }
 
 HRESULT Device9Impl::d3d9_get_adapter_identifier(
@@ -1641,6 +1688,7 @@ HRESULT Device9Impl::initialize(
         set_default_matrices();
         set_default_texture_stages();
         set_default_samplers();
+        set_default_material();
     }
 
     if (is_succeed) {
@@ -1757,12 +1805,39 @@ void Device9Impl::set_default_samplers()
     }
 }
 
+void Device9Impl::set_default_material()
+{
+    material.Diffuse.r = 0.0F;
+    material.Diffuse.g = 0.0F;
+    material.Diffuse.b = 0.0F;
+    material.Diffuse.a = 0.0F;
+
+    material.Ambient.r = 0.0F;
+    material.Ambient.g = 0.0F;
+    material.Ambient.b = 0.0F;
+    material.Ambient.a = 0.0F;
+
+    material.Specular.r = 0.0F;
+    material.Specular.g = 0.0F;
+    material.Specular.b = 0.0F;
+    material.Specular.a = 0.0F;
+
+    material.Emissive.r = 0.0F;
+    material.Emissive.g = 0.0F;
+    material.Emissive.b = 0.0F;
+    material.Emissive.a = 0.0F;
+
+    material.Power = 0.0F;
+
+    material_changed = true;
+}
+
 bool Device9Impl::validate_behavior_flags(
     DWORD flags)
 {
-    const DWORD supported_flags = (
+    const DWORD supported_flags =
         D3DCREATE_MULTITHREADED |
-        D3DCREATE_MIXED_VERTEXPROCESSING) ^ 0xFFFFFFFF;
+        D3DCREATE_MIXED_VERTEXPROCESSING;
 
     if (flags != supported_flags) {
         return false;

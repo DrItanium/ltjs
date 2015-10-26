@@ -12,6 +12,7 @@
 
 #include <array>
 #include <bitset>
+#include <mutex>
 #include <string>
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -565,6 +566,10 @@ public:
     // =========
     // Internals
 
+    using Mutex = std::mutex;
+    using MutexGuard = std::lock_guard<Mutex>;
+
+
     Device9Impl(
         ID3d9Impl* id3d9_impl);
 
@@ -629,6 +634,8 @@ public:
     void set_default_texture_stages();
 
     void set_default_samplers();
+
+    void set_default_material();
 
 
     bool ogl_create_shader(
@@ -710,6 +717,8 @@ public:
     D3DCAPS9 d3d9_caps;
     BOOL d3d9_software_vertex_processing;
 
+    Mutex mutex;
+
     RenderState render_state;
     RenderStateChanges render_state_changes;
 
@@ -727,6 +736,9 @@ public:
 
     WorldMatrices world_matrices;
     WorldMatricesChanges world_matrices_changes;
+
+    D3DMATERIAL9 material;
+    bool material_changed;
 
     GLfloat ogl_max_texture_lod_bias;
     GLfloat ogl_max_anisotropy_level;

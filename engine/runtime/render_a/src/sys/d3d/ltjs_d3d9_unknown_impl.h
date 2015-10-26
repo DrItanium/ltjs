@@ -8,6 +8,7 @@
 
 
 #include <cassert>
+#include <mutex>
 #include <type_traits>
 #include <d3d9.h>
 
@@ -45,6 +46,30 @@ public:
         ref_counter_ -= 1;
 
         if (ref_counter_ == 0) {
+            delete instance;
+            return 0;
+        }
+
+        return ref_counter_;
+    }
+
+    template<typename T, typename M>
+    UINT release(
+        T* instance,
+        M& mutex)
+    {
+        mutex.lock();
+
+        static_assert(
+            std::is_base_of<UnknownImpl,T>::value,
+            "Instance must be derived of UnknownImpl.");
+
+        assert(ref_counter_ > 0);
+
+        ref_counter_ -= 1;
+
+        if (ref_counter_ == 0) {
+            mutex.unlock();
             delete instance;
             return 0;
         }
