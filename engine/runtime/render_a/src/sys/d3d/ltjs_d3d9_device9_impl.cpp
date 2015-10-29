@@ -44,6 +44,8 @@ IFACEMETHODIMP Device9Impl::QueryInterface(
     REFIID riid,
     void** ppvObj)
 {
+    MutexGuard guard_device(mutex);
+
     return query_interface(
         IID_IDirect3DDevice9,
         riid,
@@ -52,14 +54,23 @@ IFACEMETHODIMP Device9Impl::QueryInterface(
 
 IFACEMETHODIMP_(ULONG) Device9Impl::AddRef()
 {
+    MutexGuard guard_device(mutex);
+
     return add_ref();
 }
 
 IFACEMETHODIMP_(ULONG) Device9Impl::Release()
 {
-    return release(
-        this,
-        mutex);
+    mutex.lock();
+
+    auto result = release(
+        this);
+
+    if (result > 0) {
+        mutex.unlock();
+    }
+
+    return result;
 }
 
 // IUnknown
@@ -93,6 +104,8 @@ IFACEMETHODIMP Device9Impl::GetDirect3D(
 IFACEMETHODIMP Device9Impl::GetDeviceCaps(
     D3DCAPS9* pCaps)
 {
+    MutexGuard guard_device(mutex);
+
     if (!pCaps) {
         return D3DERR_INVALIDCALL;
     }
@@ -437,6 +450,8 @@ IFACEMETHODIMP Device9Impl::GetViewport(
 IFACEMETHODIMP Device9Impl::SetMaterial(
     const D3DMATERIAL9* pMaterial)
 {
+    MutexGuard guard_device(mutex);
+
     if (!pMaterial) {
         return D3DERR_INVALIDCALL;
     }
@@ -1158,6 +1173,8 @@ Device9Impl::Device9Impl(
 
 Device9Impl::~Device9Impl()
 {
+    uninitialize();
+    mutex.unlock();
 }
 
 HRESULT Device9Impl::d3d9_get_adapter_identifier(

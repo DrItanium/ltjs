@@ -46,30 +46,7 @@ public:
         ref_counter_ -= 1;
 
         if (ref_counter_ == 0) {
-            delete instance;
-            return 0;
-        }
-
-        return ref_counter_;
-    }
-
-    template<typename T, typename M>
-    UINT release(
-        T* instance,
-        M& mutex)
-    {
-        mutex.lock();
-
-        static_assert(
-            std::is_base_of<UnknownImpl,T>::value,
-            "Instance must be derived of UnknownImpl.");
-
-        assert(ref_counter_ > 0);
-
-        ref_counter_ -= 1;
-
-        if (ref_counter_ == 0) {
-            mutex.unlock();
+            is_releasing_ = true;
             delete instance;
             return 0;
         }
@@ -82,9 +59,12 @@ public:
         REFIID riid,
         void** ppvObj);
 
+    bool is_releasing() const;
+
 
 protected:
     UINT ref_counter_;
+    bool is_releasing_;
 }; // UnknownImpl
 
 

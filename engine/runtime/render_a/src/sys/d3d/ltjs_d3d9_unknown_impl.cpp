@@ -7,7 +7,8 @@ namespace d3d9 {
 
 
 UnknownImpl::UnknownImpl() :
-    ref_counter_(1)
+    ref_counter_(1),
+    is_releasing_()
 {
 }
 
