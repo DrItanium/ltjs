@@ -181,6 +181,8 @@ set(
     vertexbuffercontroller.h
     ../../../../world/src/world_tree.h
     ../../../../world/src/worldtreehelper.h
+    ltjs_d3d9_device_mutex.h
+    ltjs_d3d9_device_mutex_guard.h
     ltjs_d3d9_device9_impl.h
     ltjs_d3d9_exception.h
     ltjs_d3d9_fvf.h
@@ -273,6 +275,8 @@ set(
     texturescriptinterpreter.cpp
     texturescriptmgr.cpp
     texturescriptvarmgr.cpp
+    ltjs_d3d9_device_mutex.cpp
+    ltjs_d3d9_device_mutex_guard.cpp
     ltjs_d3d9_device9_impl.cpp
     ltjs_d3d9_dsurface9_impl.cpp
     ltjs_d3d9_exception.cpp

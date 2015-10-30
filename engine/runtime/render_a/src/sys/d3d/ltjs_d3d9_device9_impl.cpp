@@ -1,5 +1,6 @@
 #include "precompile.h"
 #include "ltjs_d3d9_device9_impl.h"
+#include "ltjs_d3d9_device_mutex_guard.h"
 #include "ltjs_d3d9_exception.h"
 #include "ltjs_d3d9_id3d9_impl.h"
 #include "ltjs_d3d9_wrapper.h"
@@ -44,7 +45,7 @@ IFACEMETHODIMP Device9Impl::QueryInterface(
     REFIID riid,
     void** ppvObj)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     return query_interface(
         IID_IDirect3DDevice9,
@@ -54,23 +55,17 @@ IFACEMETHODIMP Device9Impl::QueryInterface(
 
 IFACEMETHODIMP_(ULONG) Device9Impl::AddRef()
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     return add_ref();
 }
 
 IFACEMETHODIMP_(ULONG) Device9Impl::Release()
 {
-    mutex.lock();
+    DeviceMutexGuard guard_device(mutex);
 
-    auto result = release(
+    return release(
         this);
-
-    if (result > 0) {
-        mutex.unlock();
-    }
-
-    return result;
 }
 
 // IUnknown
@@ -104,7 +99,7 @@ IFACEMETHODIMP Device9Impl::GetDirect3D(
 IFACEMETHODIMP Device9Impl::GetDeviceCaps(
     D3DCAPS9* pCaps)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (!pCaps) {
         return D3DERR_INVALIDCALL;
@@ -450,7 +445,7 @@ IFACEMETHODIMP Device9Impl::GetViewport(
 IFACEMETHODIMP Device9Impl::SetMaterial(
     const D3DMATERIAL9* pMaterial)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (!pMaterial) {
         return D3DERR_INVALIDCALL;
@@ -535,7 +530,7 @@ IFACEMETHODIMP Device9Impl::SetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD Value)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     validate_render_state_value(
         State,
@@ -553,7 +548,7 @@ IFACEMETHODIMP Device9Impl::GetRenderState(
     D3DRENDERSTATETYPE State,
     DWORD* pValue)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     switch(State) {
     case D3DRS_ZENABLE:
@@ -653,7 +648,7 @@ IFACEMETHODIMP Device9Impl::GetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD* pValue)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (Stage > (max_texture_stages - 1)) {
         return D3DERR_INVALIDCALL;
@@ -688,7 +683,7 @@ IFACEMETHODIMP Device9Impl::SetTextureStageState(
     D3DTEXTURESTAGESTATETYPE Type,
     DWORD Value)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (Stage > (max_texture_stages - 1)) {
         return D3DERR_INVALIDCALL;
@@ -711,7 +706,7 @@ IFACEMETHODIMP Device9Impl::GetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD* pValue)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (Sampler > (max_samplers - 1)) {
         return D3DERR_INVALIDCALL;
@@ -746,7 +741,7 @@ IFACEMETHODIMP Device9Impl::SetSamplerState(
     D3DSAMPLERSTATETYPE Type,
     DWORD Value)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     if (Sampler > (max_samplers - 1)) {
         return D3DERR_INVALIDCALL;
@@ -811,7 +806,7 @@ IFACEMETHODIMP Device9Impl::GetScissorRect(
 IFACEMETHODIMP Device9Impl::SetSoftwareVertexProcessing(
     BOOL bSoftware)
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     switch (bSoftware) {
     case FALSE:
@@ -826,7 +821,7 @@ IFACEMETHODIMP Device9Impl::SetSoftwareVertexProcessing(
 
 IFACEMETHODIMP_(BOOL) Device9Impl::GetSoftwareVertexProcessing()
 {
-    MutexGuard guard_device(mutex);
+    DeviceMutexGuard guard_device(mutex);
 
     return d3d9_software_vertex_processing;
 }
@@ -1174,7 +1169,7 @@ Device9Impl::Device9Impl(
 Device9Impl::~Device9Impl()
 {
     uninitialize();
-    mutex.unlock();
+    //mutex.unlock();
 }
 
 HRESULT Device9Impl::d3d9_get_adapter_identifier(

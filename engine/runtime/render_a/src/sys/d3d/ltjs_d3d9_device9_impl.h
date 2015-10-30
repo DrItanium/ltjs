@@ -12,11 +12,11 @@
 
 #include <array>
 #include <bitset>
-#include <mutex>
 #include <string>
 #include <d3d9.h>
 #include <d3dx9.h>
 #include "GL/glcorearb.h"
+#include "ltjs_d3d9_device_mutex.h"
 #include "ltjs_d3d9_unknown_impl.h"
 
 
@@ -566,8 +566,7 @@ public:
     // =========
     // Internals
 
-    using Mutex = std::mutex;
-    using MutexGuard = std::lock_guard<Mutex>;
+    using Mutex = DeviceMutex;
 
 
     Device9Impl(
