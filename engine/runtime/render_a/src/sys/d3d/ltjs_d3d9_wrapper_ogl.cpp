@@ -437,7 +437,6 @@ bool Wrapper::preinitialize_ogl_context(
     pfd_request.dwFlags = flags;
     pfd_request.iPixelType = PFD_TYPE_RGBA;
     pfd_request.cColorBits = 32;
-    pfd_request.cDepthBits = 24;
     pfd_request.iLayerType = PFD_MAIN_PLANE;
 
     auto pixelFormatIndex = ::ChoosePixelFormat(
@@ -498,20 +497,6 @@ bool Wrapper::preinitialize_ogl_context(
     if (pfd_response.cColorBits != pfd_request.cColorBits) {
         error_message_ =
             "Choosen color bits does not match requested ones.";
-
-        return false;
-    }
-
-    if (pfd_response.cDepthBits != pfd_request.cDepthBits) {
-        error_message_ =
-            "Choosen depth bits does not match requested ones.";
-
-        return false;
-    }
-
-    if (pfd_response.cStencilBits != pfd_request.cStencilBits) {
-        error_message_ =
-            "Choosen stencil bits does not match requested ones.";
 
         return false;
     }
