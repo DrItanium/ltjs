@@ -35,8 +35,11 @@
 // screen near z -- use this value if you want your polygons to draw
 // in front of everything
 
+// JWS: why is the win32 only!?
 #ifdef _WIN32
 #define SCREEN_NEAR_Z       0.0
+#else 
+#define SCREEN_NEAR_Z 		0.0f
 #endif
 
 
