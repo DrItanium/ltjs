@@ -14,7 +14,9 @@
 #define __VERSION_MGR_H__
 
 #include "ltbasetypes.h"
-#include "regmgr.h"
+#ifdef _WIN32
+	#include "regmgr.h"
+#endif 
 
 extern LTGUID GAMEGUID;
 
