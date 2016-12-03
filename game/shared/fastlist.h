@@ -158,7 +158,7 @@
 	{
 		if (!m_pHead)
 		{		
-			m_pHead = new CFastListNode;
+			m_pHead = new CFastListNode<T>;
 			if (!m_pRoot) return false;
 
 			m_pHead->m_Data = data;

@@ -56,7 +56,8 @@ class CTList
 		// Note : The banked list is stored per list type so it doesn't get huge
 		CBankedList<LTLink> *GetBank()
 		{
-			_ASSERT(!!s_pLTLinkBank);
+#warning "HAD TO DISABLE ASSERT HERE FOR THE TIME BEING!"
+			//_ASSERT(!!s_pLTLinkBank);
 			return s_pLTLinkBank;
 		}
 

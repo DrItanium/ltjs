@@ -23,7 +23,11 @@ const int MAX_OBJECT_ARRAY_SIZE = 32;
 // Version to use with dinput.
 #define DIRECTINPUT_VERSION  0x0800
 
+#ifdef __linux
+inline bool PtInRect(RECT* pRect, int x, int y)
+#else
 inline BOOL PtInRect(RECT* pRect, int x, int y)
+#endif 
 {
 	if((x >= pRect->right) || (x < pRect->left) ||
 	   (y >= pRect->bottom) || (y < pRect->top))

@@ -22,6 +22,9 @@ private:
 #ifdef __PSX2
     friend class t_Parent;
     friend class t_Parent::t_Iter;
+#elif __linux
+    friend t_Parent;
+    friend typename t_Parent::t_Iter;
 #else
     friend t_Parent;
     friend t_Parent::t_Iter;
@@ -645,7 +648,8 @@ uint32 CBankedList<T>::GetFootprint()
 	}
 
 	// Add in the empty banks
-	t_Bank *pFinger = m_pEmptyHead;
+	//t_Bank *pFinger = m_pEmptyHead; /* Microsoft's compiler allows this!! */
+	pFinger = m_pEmptyHead;
 	while (pFinger)
 	{
 		nSize += sizeof(*pFinger);
