@@ -45,7 +45,7 @@ Used for:   2D Rendering.
 
 
 
-#ifndef __LINUX
+#ifndef __linux
 // Provides the definition for the utility class LTRect that represents a
 // templatized 2d AABB. Each extent is stored in a 2d vector to allow easier
 // operation on individual components. Most utility function assume that

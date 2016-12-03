@@ -51,7 +51,7 @@
 #define __STDLIB_H__
 #endif
 
-#ifndef __LINUX
+#ifndef __linux
 #define LTMODULE_EXPORT __declspec(dllexport)
 #else
 #define LTMODULE_EXPORT
@@ -1005,7 +1005,7 @@ int32 CAPIHolderBase::Version() {
     //
 
     #ifdef _DEBUG
-        #if defined(__LINUX)
+        #if defined(__linux)
             #define BREAK1()
         #else
             #define BREAK1() __asm {int 3}

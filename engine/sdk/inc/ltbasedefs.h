@@ -52,7 +52,7 @@
     {
 #define END_EXTERNC() };
 
-#ifdef __LINUX
+#ifdef __linux
 	#define MODULE_EXPORT
 	#define MODULE_IMPORT
 	#define _MAX_PATH 256
@@ -88,7 +88,7 @@ inline uint32 LTStrLen(const char* pszStr1)
 	return 0;
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline uint32 LTStrLen(const wchar_t* pszStr1)
 {
 	if(pszStr1)
@@ -106,7 +106,7 @@ inline bool LTStrEmpty(const char* pszStr)
 	return !pszStr || (pszStr[0] == '\0');
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline bool LTStrEmpty(const wchar_t* pszStr)
 {
 	return !pszStr || (pszStr[0] == (wchar_t)'\0');
@@ -157,7 +157,7 @@ inline void LTStrCpy(char *pDest, const char *pSrc, uint32 nBufferChars)
 
 
 
-#ifndef __LINUX
+#ifndef __linux
 inline void LTStrCpy(wchar_t *pDest, const wchar_t *pSrc, uint32 nBufferChars) 
 {
 
@@ -214,7 +214,7 @@ inline char* LTStrDup(const char* pszString)
 	return pRV;
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline wchar_t* LTStrDup(const wchar_t* pszString)
 {
 	//handle a null input
@@ -283,7 +283,7 @@ inline void LTStrCat(char *pDest, const char *pSrc, uint32 destBytes)
 	pDest[destLen + catLen] = '\0';
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline void LTStrCat(wchar_t *pDest, const wchar_t *pSrc, uint32 nBufferChars) 
 {
 
@@ -355,7 +355,7 @@ inline int32 LTStrCmp(const char* pszStr1, const char* pszStr2)
 	return strcmp(pszStr1, pszStr2);
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline int32 LTStrCmp(const wchar_t* pszStr1, const wchar_t* pszStr2)
 {
 #ifndef _FINAL
@@ -380,7 +380,7 @@ inline bool LTStrEquals(const char* pszStr1, const char* pszStr2)
 	return (LTStrCmp(pszStr1, pszStr2) == 0);
 }
 
-#ifndef __LINUX
+#ifndef __linux
 inline bool LTStrEquals(const wchar_t* pszStr1, const wchar_t* pszStr2)
 {
 	return (LTStrCmp(pszStr1, pszStr2) == 0);
@@ -395,7 +395,8 @@ inline void LTVSNPrintF(char *buffer, size_t count, const char *format, va_list 
 {
 	if(count)
 	{
-#ifdef __LINUX
+#ifdef __linux
+#warning "There is no buffer checking on this linux version, potential buffer overruns could ensue!"
 		//!!!NOTE: There is no buffer checking on this linux version, potential buffer overruns
 		//could ensue.
 		vsprintf(buffer, format, argptr);
@@ -1612,9 +1613,11 @@ Number of valid objects in m_pList.
 template<class T, int size>
 class ObjArray : public BaseObjArray<T> {
 public:
+	using BaseClass = BaseObjArray<T>;
+public:
     ObjArray() {
-        m_pArray = m_Array;
-        m_MaxListSize = size;
+		BaseClass::m_pArray = m_Array;
+		BaseClass::m_MaxListSize = size;
     }
 
 private:
