@@ -58,11 +58,11 @@ typedef uint32 LTRESULT;
 #endif
 
 #ifndef TRUE
-    #define TRUE    1
+constexpr int TRUE = 1;
 #endif
 
 #ifndef FALSE
-    #define FALSE   0
+constexpr int FALSE = 0;
 #endif
 
 constexpr uint32 BAD_INDEX = static_cast<uint32>(-1);
