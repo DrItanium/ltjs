@@ -64,7 +64,7 @@ BOOL CZMgrRezMgr::DiskError()
 
 BOOL ExtCheck (const char * sExtensions, const char * sExt )
 {
-#ifdef _LINUX
+#ifdef __linux
 	notSupportedLinux ();
 	return FALSE;
 #else
@@ -105,7 +105,7 @@ BOOL ExtCheck (const char * sExtensions, const char * sExt )
 // Extracts a directory full of resources into files
 void ExtractDir(CRezDir* pDir, const char* sParamPath) {
   
-#ifdef _LINUX
+#ifdef __linux
   notSupportedLinux ();
   return;
 #else
@@ -282,7 +282,7 @@ void ViewDir(CRezDir* pDir, const char* sParamPath) {
 // Transfers a directory full of files into the resource file
 void TransferDir(CRezDir* pDir, const char* sParamPath, const char * sExts ) {
 
-#ifdef _LINUX
+#ifdef __linux
 	notSupportedLinux ();
 	return;
 #else
@@ -520,7 +520,7 @@ void TransferDir(CRezDir* pDir, const char* sParamPath, const char * sExts ) {
 //---------------------------------------------------------------------------------------------------
 // Freshen a directory full of files into the resource file
 void FreshenDir(CRezDir* pDir, const char* sParamPath) {
-#ifdef _LINUX
+#ifdef __linux
 	notSupportedLinux ();
 	return;
 #else
