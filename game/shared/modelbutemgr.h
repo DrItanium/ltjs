@@ -16,7 +16,7 @@
 #include "gamebutemgr.h"
 #include "clientservershared.h"
 #include "surfacedefs.h"
-#include "..\shared\butelistreader.h"
+#include "../shared/butelistreader.h"
 #include "debugnew.h"
 
 // Defines
@@ -30,7 +30,7 @@
 #define NODEFLAG_EYE			(32)	// This node is a "eye" node (for humans)
 #define NODEFLAG_WALLSTICK		(64)	// This node is a "wall stick" node (for humans)
 
-#define MBMGR_DEFAULT_FILE "Attributes\\ModelButes.txt"
+#define MBMGR_DEFAULT_FILE "Attributes/ModelButes.txt"
 
 #define MAX_MODELBMGR_NAME_LEN	32
 #define	MAX_MODELBMGR_MAX_PATH	64
