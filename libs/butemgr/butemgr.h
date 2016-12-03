@@ -18,17 +18,34 @@
 
 #include "lithtypes.h"
 
+// got tired of trying to fix things
+#ifdef __linux
+#define PLATFORM_LINUX
+#elif defined(_WIN32)
+#define PLATFORM_NT
+#if _MSC_VER >= 1900
+	#define VS2015OrLater
+#elif _MSC_VER >= 1300
+	#define VS7OrLater
+#else
+	#define BeforeVS7
+#endif // end _MSC VersionChecks
+#else
+#error "Unknown platform!"
+#endif
+
 #include <map>
 #include <set>
 #include <functional>
-#if _MSC_VER >= 1900
+#if defined(PLATFORM_LINUX) || (defined(PLATFORM_NT) && defined(VS2015OrLater))
 #include <unordered_set>
 #include <unordered_map>
 #else
 #include <hash_set>
 #include <hash_map>
 #endif
-#if _MSC_VER >= 1300
+
+#if defined(PLATFORM_LINUX) || (defined(PLATFORM_NT) && defined(VS2015OrLater))
 #	include <iosfwd>
 #	include <strstream>
 #	include <iostream>
@@ -39,8 +56,13 @@
 #endif // VC7
 #include <fstream>
 
+#ifdef PLATFORM_LINUX
+#include <cstring>
+#endif
 
-#if _MSC_VER >= 1900
+
+
+#if defined(PLATFORM_LINUX) || (defined(PLATFORM_NT) && defined(VS2015OrLater))
 
 class ButeMgrHashCompare {
 public:
@@ -60,11 +82,17 @@ public:
         const char* key1,
         const char* key2) const
     {
-        return ::stricmp(key1, key2) == 0;
+		return
+#ifdef PLATFORM_NT
+        ::stricmp
+#else
+		std::strcmp
+#endif
+		(key1, key2) == 0;
     }
 }; // ButeMgrHashCompare
 
-#elif _MSC_VER >= 1300
+#elif defined(VS7OrLater)
 
 class ButeMgrHashCompare
 {
@@ -256,7 +284,7 @@ public:
 	void SetDisplayFunc(void (*pF)(const char* szMsg)) { m_pDisplayFunc = pF; }
 	CString GetErrorString() { return m_sErrorString; }
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	bool Parse( std::istream& iStream, int decryptCode = 0);
 	bool Parse( std::istream& iCrypt, int nLen, const char* cryptKey);
 #else
@@ -387,7 +415,7 @@ private:
 
 	// Used to define map of strings to TableOfItems.
 	typedef stdext::hash_map< char const*, TableOfItems*, ButeMgrHashCompare > TableOfTags;
-#elif _MSC_VER >= 1900  // VC 14.0
+#elif defined(VS2015OrLater) || defined(PLATFORM_LINUX) // VC 14.0
     // Used to define dictionary of strings.
     // This must be case sensitive!
     typedef std::unordered_set< CString, ButeMgrHashCompare, ButeMgrHashCompare > StringHolder;
@@ -468,7 +496,7 @@ private:
 	};
 	static bool GetTagsTraverseFunc( char const* pszTagName, TableOfItems& theTableOfItems, void* pContext );
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istream* m_pData;
 	std::iostream *m_pSaveData;
 #else
@@ -530,7 +558,7 @@ private:
 };
 
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 inline bool CButeMgr::Parse( std::istream& iStream, int decryptCode)
 #else
 inline bool CButeMgr::Parse( istream& iStream, int decryptCode)
@@ -552,7 +580,7 @@ inline bool CButeMgr::Parse( istream& iStream, int decryptCode)
 	return retVal;
 }
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 inline bool CButeMgr::Parse( std::istream& iCrypt, int nLen, const char* cryptKey)
 #else
 inline bool CButeMgr::Parse( istream& iCrypt, int nLen, const char* cryptKey)
@@ -561,14 +589,14 @@ inline bool CButeMgr::Parse( istream& iCrypt, int nLen, const char* cryptKey)
 	m_bCrypt = true;
 	m_cryptMgr.SetKey(cryptKey);
 	char* buf2 = new char[nLen];
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::ostrstream* pOss = new std::ostrstream(buf2, nLen);
 #else
 	ostrstream* pOss = new ostrstream(buf2, nLen);
 #endif // VC7
 	m_cryptMgr.Decrypt(iCrypt, *pOss);
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istrstream* pIStream = new std::istrstream(const_cast<const char*>(buf2), pOss->pcount());
 #else
 	istrstream* pIStream = new istrstream(buf2, pOss->pcount());
@@ -592,7 +620,7 @@ inline bool CButeMgr::Parse(CRezItm* pItem, int decryptCode)
 {
 	if (!pItem)
 		return false;
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istrstream* pIStream = new std::istrstream((char*)pItem->Load(), pItem->GetSize());
 #else
 	istrstream* pIStream = new istrstream((char*)pItem->Load(), pItem->GetSize());
@@ -615,7 +643,7 @@ inline bool CButeMgr::Parse(CRezItm* pItem, const char* cryptKey)
 		return false;
 	char* buf1 = (char*)pItem->Load();
 	int len = pItem->GetSize();
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istrstream* pIss = new std::istrstream(buf1, len);
 #else
 	istrstream* pIss = new istrstream(buf1, len);
@@ -640,7 +668,7 @@ inline bool CButeMgr::Parse(void* pData, unsigned long size, int decryptCode,
 {
 	if (!pData)
 		return false;
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istrstream* pIStream = new std::istrstream((char*)pData, size);
 #else
 	istrstream* pIStream = new istrstream((char*)pData, size);
@@ -666,7 +694,7 @@ inline bool CButeMgr::Parse(void* pData, unsigned long size, const char* cryptKe
 		return false;
 	char* buf1 = (char*)pData;
 	int len = size;
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::istrstream* pIss = new std::istrstream(buf1, len);
 #else
 	istrstream* pIss = new istrstream(buf1, len);
@@ -689,7 +717,7 @@ inline bool CButeMgr::Parse(void* pData, unsigned long size, const char* cryptKe
 
 inline bool CButeMgr::Parse(CString sAttributeFilename, int decryptCode)
 {
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::ifstream* pIStream = new std::ifstream(sAttributeFilename, std::ios_base::in);
 #else
 	ifstream* pIStream = new ifstream(sAttributeFilename, ios::in | ios::nocreate);
@@ -716,7 +744,7 @@ inline bool CButeMgr::Parse(CString sAttributeFilename, int decryptCode)
 
 inline bool CButeMgr::Parse(CString sAttributeFilename, const char* cryptKey)
 {
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	std::ifstream* pIs = new std::ifstream(sAttributeFilename, std::ios_base::binary);
 #else
 	ifstream* pIs = new ifstream(sAttributeFilename, ios::nocreate | ios::binary);
@@ -729,7 +757,7 @@ inline bool CButeMgr::Parse(CString sAttributeFilename, const char* cryptKey)
 		return false;
 	}
 
-#if _MSC_VER >= 1300
+#if defined(VS7OrLater) || defined(PLATFORM_LINUX)
 	pIs->seekg(0, std::ios_base::end);
 #else
 	pIs->seekg(0, ios::end);
