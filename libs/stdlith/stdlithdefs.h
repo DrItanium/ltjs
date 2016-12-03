@@ -51,6 +51,9 @@ typedef uint64_t 			uint64;
 typedef uint32 LTBOOL;
 typedef float LTFLOAT;
 typedef uint32 LTRESULT;
+
+typedef uintptr_t PointerType;
+
 // END LTBASETYPES.H
 
 #ifndef ASSERT
