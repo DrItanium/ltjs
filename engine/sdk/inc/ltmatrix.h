@@ -6,8 +6,7 @@
 #define __MATH_H__
 #endif
 
- 
-#include <math.h>
+#include <math.h> // JWS: wat!?, why???
 #ifndef __LTPLANE_H__
 	#include "ltplane.h"
 #endif

@@ -14,10 +14,12 @@
 #define __LTSYSOPTIM_H__
 
 // This is a redirector to get the system dependent include
-#ifdef __LINUX
+#ifdef __linux
 #include "sys/linux/linuxoptim.h"
 #elif _WIN32
 #include "sys/win/winoptim.h"
+#else 
+#error "Unsupported platform for compilation!"
 #endif
 
 
