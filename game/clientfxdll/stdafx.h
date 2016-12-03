@@ -3,12 +3,12 @@
 
 // This removes warnings about truncating symbol names when using stl maps.
 //
-#pragma warning( disable : 4786 )  
+//#pragma warning( disable : 4786 )  
 
-#define WIN32_LEAN_AND_MEAN
+//#define WIN32_LEAN_AND_MEAN
 
 #include <stdio.h>
-#include <windows.h>
+//#include <windows.h>
 #include <limits.h>
 
 #include "mfcstub.h"
