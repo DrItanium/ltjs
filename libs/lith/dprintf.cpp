@@ -42,7 +42,7 @@
 ***************************************************************************/
 
 #include "dprintf.h"
-#ifndef _LINUX
+#ifndef __linux
 #include <dos.h>
 #else
 #include <ctype.h>
@@ -102,7 +102,7 @@ enum dprintfOutputType {
 #ifdef _CONSOLE
 unsigned short *dprintfmonoscreen;   // pointer to B000
 #else
-#ifdef _LINUX
+#ifdef __linux 
 unsigned short *dprintfmonoscreen;   // pointer to B000
 #else
 #ifndef __FLATMODEL__
@@ -205,7 +205,7 @@ dprintfExcludeRegions dprintfExReg;
 #ifndef __WATCOM__
 #ifndef _WINDOWS
 #ifndef _CONSOLE
-#ifndef _LINUX
+#ifndef __linux
 
 /********************************  SERIAL ROUTINES *****************************/
 
@@ -487,7 +487,7 @@ void dprintfmonoclrscr( void )
 #ifdef _CONSOLE
 void dprintfmonoprint(char *message )
 #else
-#ifdef _LINUX
+#ifdef __linux
 void dprintfmonoprint(char *message )
 #else
 #ifndef __FLATMODEL__
@@ -508,7 +508,7 @@ void dprintfmonoprint(char *message )
 
 #ifndef _CONSOLE
 #ifndef _WINDOWS
-#ifndef _LINUX
+#ifndef __linux
     int i;
     static firstTimeThru = 1;   /* used to clear the screen
                                             first time in */
@@ -566,7 +566,7 @@ void dprintfdoprint (char *Str) {
 	return;
 #endif
 #else
-#ifdef _LINUX
+#ifdef __linux
 #ifdef _DEBUG
 	printf(Str);
 	return;
@@ -694,7 +694,7 @@ void dgotoxy (unsigned int Level, int X, int Y) {
 	return;
 #endif
 
-#ifdef _LINUX
+#ifdef __linux
 	return; 
 #endif
 
@@ -728,7 +728,7 @@ void dclrscr (unsigned int Level) {
 	return;
 #endif
 
-#ifdef _LINUX
+#ifdef __linux
 	return;
 #endif
 
@@ -770,7 +770,7 @@ dprintfinittype::dprintfinittype () {
 #endif
 #endif
 
-#ifdef _LINUX
+#ifdef __linux
 #ifdef _DEBUG
   dprintfOutType = DPRINTF_MONOCHROME;
 #else
@@ -784,7 +784,7 @@ dprintfinittype::dprintfinittype () {
     char Buf[BUFSIZE];
     strcpy (Buf,Str); // this could be a problem if environment string is greater than BUFSIZE
     
-    #ifdef _LINUX
+    #ifdef __linux
     	char * p = Buf;
 	
 	while ( *p )
@@ -813,7 +813,7 @@ dprintfinittype::dprintfinittype () {
     dprintfOutType = DPRINTF_MONOCHROME;
 #endif
 
-#ifdef _LINUX
+#ifdef __linux
     dprintfOutType = DPRINTF_MONOCHROME;
 #endif
 
@@ -834,7 +834,7 @@ dprintfinittype::dprintfinittype () {
 #ifndef __WATCOM__
 #ifndef _WINDOWS
 #ifndef _CONSOLE
-#ifndef _LINUX    
+#ifndef __linux    
     case DPRINTF_COM1 :
       dprintfPortHandle = dpSerComOpen (SerComUARTType8250,SerComCompTypeAT,0x3f8,4,9600,8,0,1,128,128);
       break;
@@ -872,7 +872,7 @@ dprintfinittype::~dprintfinittype () {
 #ifndef __WATCOM__
 #ifndef _WINDOWS
 #ifndef _CONSOLE
-#ifndef _LINUX
+#ifndef __linux
     case DPRINTF_COM1 :
     case DPRINTF_COM2 :
       if (dprintfPortHandle != NULL) {
