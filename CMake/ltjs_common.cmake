@@ -19,6 +19,7 @@ function(ltjs_add_default_options)
     # =======
 
     add_definitions(-DNOPS2)
+	add_compile_options(-std=c++11)
     add_compile_options($<$<NOT:$<CONFIG:DEBUG>>:-D_FINAL>)
 
     if (MSVC)
@@ -29,9 +30,6 @@ function(ltjs_add_default_options)
 
     # Compiler flags
     # ==============
-	if (GCC)
-		add_compile_options(-std=c++11)
-	endif ()
     # Common compiler flags
     # ---------------------
 
