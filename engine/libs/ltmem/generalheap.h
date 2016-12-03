@@ -55,7 +55,7 @@
 #else
 #define GENERALHEAPFILLMEMORY
 extern uint32* g_SuperMemFillCheckBlockFree;
-#define GENERALHEAPFILLMEMORYVALUE (uint32)g_SuperMemFillCheckBlockFree
+#define GENERALHEAPFILLMEMORYVALUE (uintptr_t)g_SuperMemFillCheckBlockFree
 #endif
 
 #ifdef _DEBUG
@@ -84,18 +84,18 @@ struct CGeneralHeapHeader
 	// accessor functions
 	CGeneralHeapHeader* GetPrevMemBlock() 
 	{ 
-		return (CGeneralHeapHeader*)((uint32)m_pPrevMemBlock & GENERALHEAPFLAGMASK); 
+		return (CGeneralHeapHeader*)((uintptr_t)m_pPrevMemBlock & GENERALHEAPFLAGMASK); 
 	};
 	
 	void SetPrevMemBlock(CGeneralHeapHeader* pPrevMemBlock) 
 	{ 
-		m_pPrevMemBlock = (CGeneralHeapHeader*)(((uint32)pPrevMemBlock & GENERALHEAPFLAGMASK) | 
-						  ((uint32)m_pPrevMemBlock & ~GENERALHEAPFLAGMASK));
+		m_pPrevMemBlock = (CGeneralHeapHeader*)(((uintptr_t)pPrevMemBlock & GENERALHEAPFLAGMASK) | 
+						  ((uintptr_t)m_pPrevMemBlock & ~GENERALHEAPFLAGMASK));
 	}
 
 	bool GetFreeFlag()
 	{
-		if (((uint32)m_pPrevMemBlock & GENERALHEAPBLOCKFREEFLAG) == 0) return false;
+		if (((uintptr_t)m_pPrevMemBlock & GENERALHEAPBLOCKFREEFLAG) == 0) return false;
 		else return true;
 	}
 
@@ -103,11 +103,11 @@ struct CGeneralHeapHeader
 	{
 		if (bFree) 
 		{
-			m_pPrevMemBlock = (CGeneralHeapHeader*)(((uint32)m_pPrevMemBlock & GENERALHEAPFLAGMASK) | GENERALHEAPBLOCKFREEFLAG);
+			m_pPrevMemBlock = (CGeneralHeapHeader*)(((uintptr_t)m_pPrevMemBlock & GENERALHEAPFLAGMASK) | GENERALHEAPBLOCKFREEFLAG);
 		}
 		else
 		{
-			m_pPrevMemBlock = (CGeneralHeapHeader*)(((uint32)m_pPrevMemBlock & GENERALHEAPFLAGMASK) & (~GENERALHEAPBLOCKFREEFLAG));
+			m_pPrevMemBlock = (CGeneralHeapHeader*)(((uintptr_t)m_pPrevMemBlock & GENERALHEAPFLAGMASK) & (~GENERALHEAPBLOCKFREEFLAG));
 		}
 	}
 
@@ -218,11 +218,11 @@ GENERALHEAPINLINE uint32 CGeneralHeap::GetMemBlockSize(CGeneralHeapHeader* pMemB
 {
 	if (pMemBlock->GetNextMemBlock() != NULL)
 	{
-		return (uint32)pMemBlock->GetNextMemBlock() - (uint32)pMemBlock - GENERALHEAPHEADERSIZE;
+		return (uintptr_t)pMemBlock->GetNextMemBlock() - (uintptr_t)pMemBlock - GENERALHEAPHEADERSIZE;
 	}
 	else
 	{
-		return (uint32)m_pHeapEnd - (uint32)pMemBlock - GENERALHEAPHEADERSIZE;
+		return (uintptr_t)m_pHeapEnd - (uintptr_t)pMemBlock - GENERALHEAPHEADERSIZE;
 	}
 }
 
@@ -230,7 +230,7 @@ GENERALHEAPINLINE uint32 CGeneralHeap::GetMemBlockSize(CGeneralHeapHeader* pMemB
 // get the pointer to user data in this memory piece
 GENERALHEAPINLINE void* CGeneralHeap::GetMemBlockData(CGeneralHeapHeader* pMemBlock) 
 { 
-	return (void*)((uint32)pMemBlock + GENERALHEAPHEADERSIZE); 
+	return (void*)((uintptr_t)pMemBlock + GENERALHEAPHEADERSIZE); 
 };
 
 	
@@ -455,7 +455,7 @@ GENERALHEAPINLINE void* CGeneralHeap::Alloc(uint32 nSize)
 		if (nBestSizeFound > (nSize + GENERALHEAPMINALLOCATIONSIZE))
 		{
 			// create new free block using the remainder of the space
-			CGeneralHeapHeader* pNewBlock = (CGeneralHeapHeader*)((uint32)pBestHeader + 
+			CGeneralHeapHeader* pNewBlock = (CGeneralHeapHeader*)((uintptr_t)pBestHeader + 
 				nSize + GENERALHEAPHEADERSIZE);
 			pNewBlock->SetPrevMemBlock(pBestHeader);
 			pNewBlock->SetNextMemBlock(pBestHeader->GetNextMemBlock());
@@ -485,10 +485,10 @@ GENERALHEAPINLINE void* CGeneralHeap::Alloc(uint32 nSize)
 		// this block is no longer free so set the free flag to false
 		pBestHeader->SetFreeFlag(false);
 
-//		printf("CGeneralHeap::Alloc size=%u location=%x\n",nSize,((uint32)pBestHeader + GENERALHEAPHEADERSIZE));
+//		printf("CGeneralHeap::Alloc size=%u location=%x\n",nSize,((uintptr_t)pBestHeader + GENERALHEAPHEADERSIZE));
 
 		// return the new memory address
-		return (void*)((uint32)pBestHeader + GENERALHEAPHEADERSIZE);
+		return (void*)((uintptr_t)pBestHeader + GENERALHEAPHEADERSIZE);
 	}
 					
 	// we failed to allocate memory	
@@ -499,7 +499,7 @@ GENERALHEAPINLINE void* CGeneralHeap::Alloc(uint32 nSize)
 GENERALHEAPINLINE void CGeneralHeap::Free(void* free)
 {
 	// get the pointer to the header for this memory and the previous and next headers
-	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uint32)free - GENERALHEAPHEADERSIZE);
+	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uintptr_t)free - GENERALHEAPHEADERSIZE);
 	CGeneralHeapHeader* pPrevHeader = pHeader->GetPrevMemBlock();
 	CGeneralHeapHeader* pNextHeader = pHeader->GetNextMemBlock();
 
@@ -508,7 +508,7 @@ GENERALHEAPINLINE void CGeneralHeap::Free(void* free)
 	void* memLimit = m_pHeapEnd;
 	if (pHeader->GetNextMemBlock() != NULL)
 	{
-		memLimit = ( void * ) ( ( ( uint32 ) pHeader->GetNextMemBlock() ) + ( ( uint32 ) sizeof( CGeneralHeapHeader ) ) );
+		memLimit = ( void * ) ( ( ( uintptr_t ) pHeader->GetNextMemBlock() ) + ( ( uintptr_t ) sizeof( CGeneralHeapHeader ) ) );
 	}
 #endif
 
@@ -633,7 +633,7 @@ GENERALHEAPINLINE void CGeneralHeap::DumpHeap()
 // get the size of a piece of allocated memory
 GENERALHEAPINLINE uint32 CGeneralHeap::GetSize(void* mem)
 {
-	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uint32)mem - GENERALHEAPHEADERSIZE);
+	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uintptr_t)mem - GENERALHEAPHEADERSIZE);
 	return GetMemBlockSize(pHeader);
 }
 	
@@ -641,7 +641,7 @@ GENERALHEAPINLINE uint32 CGeneralHeap::GetSize(void* mem)
 // return true if this is valid allocated memory
 GENERALHEAPINLINE bool CGeneralHeap::ValidMemory(void* mem)
 {
-	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uint32)mem - GENERALHEAPHEADERSIZE);
+	CGeneralHeapHeader* pHeader = (CGeneralHeapHeader*)((uintptr_t)mem - GENERALHEAPHEADERSIZE);
 
 	if (pHeader->GetFreeFlag() == true) return false;
 	else
@@ -666,16 +666,16 @@ GENERALHEAPINLINE bool CGeneralHeap::ValidMemory(void* mem)
 // dump info about a specific piece of memory
 GENERALHEAPINLINE void CGeneralHeap::DumpMemInfo(void* mem)
 {
-	CGeneralHeapHeader* p = (CGeneralHeapHeader*)((uint32)mem - GENERALHEAPHEADERSIZE);
+	CGeneralHeapHeader* p = (CGeneralHeapHeader*)((uintptr_t)mem - GENERALHEAPHEADERSIZE);
 /*	
-	printf("%08x : ", (uint32)p);
-	printf("next = %08x prev = %08x data = %08x\n", (uint32)p->GetNextMemBlock(), (uint32)p->GetPrevMemBlock(), (uint32)p+GENERALHEAPHEADERSIZE);
+	printf("%08x : ", (uintptr_t)p);
+	printf("next = %08x prev = %08x data = %08x\n", (uintptr_t)p->GetNextMemBlock(), (uintptr_t)p->GetPrevMemBlock(), (uintptr_t)p+GENERALHEAPHEADERSIZE);
 	printf("           size=%08x (%u) ", GetMemBlockSize(p), GetMemBlockSize(p));
 
 	if (p->GetFreeFlag()) 
 	{
 		printf("free ");
-		printf("\n           freenext = %08x freeprev=%08x ", (uint32)p->m_pNextFreeBlock, (uint32)p->m_pPrevFreeBlock);
+		printf("\n           freenext = %08x freeprev=%08x ", (uintptr_t)p->m_pNextFreeBlock, (uintptr_t)p->m_pPrevFreeBlock);
 	}
 	else printf("used ");
 	
