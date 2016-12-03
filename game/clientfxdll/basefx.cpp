@@ -2,6 +2,13 @@
 #include "basefx.h"
 #include "clientfx.h"
 
+#ifdef __linux
+#include <cstring>
+int _stricmp(const char* s1, const char* s2) {
+	return std::strcmp(s1, s2);
+}
+#endif
+
 CBaseFXProps::CBaseFXProps() : 
 	m_pScaleKeys		(NULL),
 	m_nNumScaleKeys		(0),

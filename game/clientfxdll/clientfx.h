@@ -25,20 +25,20 @@
 	extern "C"
 	{
 
-		__declspec(dllexport) int				fxGetNum();
-		__declspec(dllexport) FX_REF			fxGetRef(int nFx);
+		MODULE_EXPORT int				fxGetNum();
+		MODULE_EXPORT FX_REF			fxGetRef(int nFx);
 	
-		__declspec(dllexport) void				fxDelete(CBaseFX *pDeleteFX);
+		MODULE_EXPORT void				fxDelete(CBaseFX *pDeleteFX);
 
-		__declspec(dllexport) void				fxSetPlayer(HOBJECT hPlayer);
+		MODULE_EXPORT void				fxSetPlayer(HOBJECT hPlayer);
 
-		__declspec(dllexport) void				fxSetAppFocus(bool bAppFocus);
+		MODULE_EXPORT void				fxSetAppFocus(bool bAppFocus);
 
-		__declspec(dllexport) void				fxSetCreateFunction(TCreateClientFXFn pFn, void* pUserData);
+		MODULE_EXPORT void				fxSetCreateFunction(TCreateClientFXFn pFn, void* pUserData);
 
-		__declspec(dllexport) CBaseFXProps*		fxCreatePropList(int nFx);
+		MODULE_EXPORT CBaseFXProps*		fxCreatePropList(int nFx);
 
-		__declspec(dllexport) void				fxFreePropList(CBaseFXProps* pPropList);
+		MODULE_EXPORT void				fxFreePropList(CBaseFXProps* pPropList);
 	}
 
 	// FX Creation functions
