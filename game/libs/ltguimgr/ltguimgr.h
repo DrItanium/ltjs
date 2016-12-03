@@ -17,7 +17,7 @@
 #include "iltfontmanager.h"
 
 //TO2 specific 
-#include "..\..\shared\debugnew.h"
+#include "../../shared/debugnew.h"
 
 #pragma warning( disable : 4786 )
 #include <vector>
@@ -26,24 +26,24 @@ typedef std::vector<CUIPolyString*> PStringArray;
 typedef std::vector<CUIFormattedPolyString*> FPStringArray;
 
 //base classes
-#include "..\ltguimgr\ltguicommandhandler.h"
-#include "..\ltguimgr\ltguictrl.h"
+#include "../ltguimgr/ltguicommandhandler.h"
+#include "../ltguimgr/ltguictrl.h"
 typedef std::vector<CLTGUICtrl*> ControlArray;
 
 //basic control classes
-#include "..\ltguimgr\ltguitextitemctrl.h"
-#include "..\ltguimgr\ltguibutton.h"
-#include "..\ltguimgr\ltguicyclectrl.h"
-#include "..\ltguimgr\ltguitoggle.h"
-#include "..\ltguimgr\ltguislider.h"
-#include "..\ltguimgr\ltguicolumnctrl.h"
-#include "..\ltguimgr\ltguiframe.h"
-#include "..\ltguimgr\ltguieditctrl.h"
-#include "..\ltguimgr\ltguilargetext.h"
+#include "../ltguimgr/ltguitextitemctrl.h"
+#include "../ltguimgr/ltguibutton.h"
+#include "../ltguimgr/ltguicyclectrl.h"
+#include "../ltguimgr/ltguitoggle.h"
+#include "../ltguimgr/ltguislider.h"
+#include "../ltguimgr/ltguicolumnctrl.h"
+#include "../ltguimgr/ltguiframe.h"
+#include "../ltguimgr/ltguieditctrl.h"
+#include "../ltguimgr/ltguilargetext.h"
 
 //container control classes
-#include "..\ltguimgr\ltguiwindow.h"
-#include "..\ltguimgr\ltguilistctrl.h"
+#include "../ltguimgr/ltguiwindow.h"
+#include "../ltguimgr/ltguilistctrl.h"
 
 
 //these are defined in the module that links
@@ -52,6 +52,6 @@ extern ILTFontManager*	g_pFontManager;
 extern ILTTexInterface*	g_pTexInterface;
 
 //utility functions for handling UV coordinates
-#include "..\ltguimgr\ltquaduvutils.h"
+#include "../ltguimgr/ltquaduvutils.h"
 
 #endif // _LTGUIMGR_H_
