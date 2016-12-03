@@ -29,7 +29,9 @@ function(ltjs_add_default_options)
 
     # Compiler flags
     # ==============
-
+	if (GCC)
+		add_compile_options(-std=c++11)
+	endif ()
     # Common compiler flags
     # ---------------------
 

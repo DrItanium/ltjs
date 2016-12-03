@@ -31,31 +31,24 @@
 #define __ASSERT_H__
 #endif
 
+// C++11 addons since this is just freaking sad
+#include <cstdint>
 // These are also in sdk/incs/ltbasetypes.h, however, since the stuff in lithshared 
 // should compile with out the engine, they are duplicated here
 // BEGIN LTBASETYPES.H
 
-typedef char				int8;
-typedef short int			int16;
-typedef int					int32;
+typedef int8_t				int8;
+typedef int16_t				int16;
+typedef int32_t				int32;
 
-#ifdef __linux
-typedef long long           int64;
-#else
-typedef __int64             int64;
-#endif
+typedef int64_t 			int64;
 
-typedef unsigned char		uint8;
-typedef unsigned short int	uint16;
-typedef unsigned int		uint32;
+typedef uint8_t				uint8;
+typedef uint16_t			uint16;
+typedef uint32_t			uint32;
+typedef uint64_t 			uint64;
 
-#ifdef __linux
-typedef unsigned long long  uint64;
-#else
-typedef unsigned __int64    uint64;
-#endif
-
-typedef unsigned int LTBOOL;
+typedef uint32 LTBOOL;
 typedef float LTFLOAT;
 typedef uint32 LTRESULT;
 // END LTBASETYPES.H
@@ -72,7 +65,7 @@ typedef uint32 LTRESULT;
     #define FALSE   0
 #endif
 
-#define BAD_INDEX   ((uint32)-1)
+constexpr uint32 BAD_INDEX = static_cast<uint32>(-1);
 
 #endif  // __STDLITH_DEFS_H__
 
