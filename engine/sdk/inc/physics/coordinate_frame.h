@@ -976,7 +976,7 @@ public:
 	const LTVector3f TransformPointToLocal(  const LTVector3f& p ) const
 	{
 		//Translate to this frame's origin, then project onto this LTBasis
-		return TransformVectorToLocal( p - m_O );
+		return T::TransformVectorToLocal( p - m_O );
 	}
 
 	/*!
@@ -989,7 +989,7 @@ public:
 	const LTVector3f TransformPointToParent( const LTVector3f& p ) const
 	{
 		//transform the coordinate vector and Translate by this origin
-		return TransformVectorToParent( p ) + m_O;
+		return T::TransformVectorToParent( p ) + m_O;
 	}
 
 	/*!
@@ -1093,7 +1093,8 @@ public:
 		const LTMatrix3f M = RotationMatrix( a, u );
 		const LTMatrix3f v = M * (this->m_O - p0);
 
-		this->m_O = p0 + v;//new position
+#warning "THIS IS CURRENTLY DISABLED UNTIL I CAN FIGURE OUT WHAT THE OPERATION IS SUPPOSED TO BE!!!"
+		//this->m_O = p0 + v;//new position
 
 		//rotate the local axes
 		this->Rotate( a, u );
