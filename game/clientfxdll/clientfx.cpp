@@ -36,7 +36,8 @@
 #endif
 
 ILTClient *g_pLTClient;
-define_holder(ILTClient, g_pLTClient);
+#warning "Had to disable define_holder for the time being!"
+//define_holder(ILTClient, g_pLTClient);
 
 // Function prototypes
 CBaseFX*								fxCreateParticleSystem();
@@ -125,7 +126,7 @@ void*				g_pCreateClientFxUserData;
 
 extern "C"
 {
-
+#ifdef _WIN32
 bool APIENTRY DllMain( HANDLE hModule, 
                        uint32  ul_reason_for_call, 
                        LPVOID lpReserved
@@ -142,6 +143,9 @@ bool APIENTRY DllMain( HANDLE hModule,
     }
     return true;
 }
+#else
+#warning "Need to make an SO version of this library"
+#endif
 
 //------------------------------------------------------------------
 //
@@ -151,7 +155,7 @@ bool APIENTRY DllMain( HANDLE hModule,
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) int fxGetNum()
+MODULE_EXPORT int fxGetNum()
 {
 	// Success !!
 
@@ -166,7 +170,7 @@ __declspec(dllexport) int fxGetNum()
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) FX_REF fxGetRef(int nFx)
+MODULE_EXPORT FX_REF fxGetRef(int nFx)
 {
 	FX_REF fxRef;
 
@@ -366,7 +370,7 @@ __declspec(dllexport) FX_REF fxGetRef(int nFx)
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) void fxDelete(CBaseFX *pDeleteFX)
+MODULE_EXPORT void fxDelete(CBaseFX *pDeleteFX)
 {
 	// Figure out what kind of FX we are deleting and make sure the propper bank handles it...
 
@@ -479,7 +483,7 @@ __declspec(dllexport) void fxDelete(CBaseFX *pDeleteFX)
 //   PURPOSE  : Sets the current player (client) object
 //
 //------------------------------------------------------------------
-__declspec(dllexport) CBaseFXProps* fxCreatePropList(int nFx)
+MODULE_EXPORT CBaseFXProps* fxCreatePropList(int nFx)
 {
 	switch(nFx)
 	{
@@ -567,7 +571,7 @@ __declspec(dllexport) CBaseFXProps* fxCreatePropList(int nFx)
 //   PURPOSE  : Sets the current player (client) object
 //
 //------------------------------------------------------------------
-__declspec(dllexport) void fxFreePropList(CBaseFXProps* pPropList)
+MODULE_EXPORT void fxFreePropList(CBaseFXProps* pPropList)
 {
 	debug_delete(pPropList);
 }
@@ -581,7 +585,7 @@ __declspec(dllexport) void fxFreePropList(CBaseFXProps* pPropList)
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) void fxSetPlayer(HOBJECT hPlayer)
+MODULE_EXPORT void fxSetPlayer(HOBJECT hPlayer)
 {
 	g_hPlayer = hPlayer;
 }
@@ -594,7 +598,7 @@ __declspec(dllexport) void fxSetPlayer(HOBJECT hPlayer)
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) void fxSetAppFocus(bool bAppFocus)
+MODULE_EXPORT void fxSetAppFocus(bool bAppFocus)
 {
 	g_bAppFocus = bAppFocus;
 }
@@ -607,7 +611,7 @@ __declspec(dllexport) void fxSetAppFocus(bool bAppFocus)
 //
 //------------------------------------------------------------------
 
-__declspec(dllexport) void fxSetCreateFunction(TCreateClientFXFn pFn, void* pUserData)
+MODULE_EXPORT void fxSetCreateFunction(TCreateClientFXFn pFn, void* pUserData)
 {
 	g_pCreateClientFxFn			= pFn;
 	g_pCreateClientFxUserData	= pUserData;
