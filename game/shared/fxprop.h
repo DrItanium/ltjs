@@ -12,9 +12,6 @@
 #ifndef __FXPROP_H__
 #define __FXPROP_H__
 
-#ifndef _WIN32
-#include <cstring>
-#endif
 	struct FX_PROP
 	{
 		struct FX_CLRKEY
@@ -149,13 +146,7 @@
 												char *sExt  = strtok( m_data.m_sVal, "|" );
 												char *sPath = strtok( LTNULL, "|" );
 												
-												if( sPath && 
-#ifdef _WIN32
-														_stricmp( sPath, "..." )
-#else
-														std::strcmp( sPath, "..." )
-#endif
-														)
+												if( sPath && _stricmp( sPath, "..." ))
 													SAFE_STRCPY( szPathOut, sPath );
 											}
 

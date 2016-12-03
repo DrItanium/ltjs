@@ -59,6 +59,8 @@
 	#include <ctype.h>
 	inline int stricmp(const char* string1, const char* string2)
 	{ return strcasecmp(string1, string2); }
+	inline int _stricmp(const char* string1, const char* string2) 
+	{ return stricmp(string1, string2); }
 	inline char* strupr(char* s)
 	{ while (*s) { *s = toupper(*s); ++s; } return s; }
 	inline int notSupportedLinux ()
